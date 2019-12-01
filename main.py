@@ -10,7 +10,6 @@ Michael Gorbunov
 '''
 TODO
 -Make functional
--Get into / onto github
 -Adapt to work with Dennis' gamestate
 -Add input from buttons
 -Work with multiple files
@@ -28,9 +27,9 @@ SCALE_FACTOR = 6
 SCREEN_WIDTH = 160 * SCALE_FACTOR // 1 #//1 = floor function
 SCREEN_HEIGHT = 120 * SCALE_FACTOR // 1
 pygame.display.set_caption("Connect 4 AI")
-icon = pygame.image.load("img/red_piece.png")
+ICON = pygame.image.load("img/red_piece.png")
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_icon(icon)
+pygame.display.set_icon(ICON)
 
 
 #loading all images
@@ -74,7 +73,7 @@ class InputType:
 	SELECT = pygame.K_DOWN
 	HOME   = pygame.K_SPACE
 
-player_move_preview = 0 #which row the current move is under
+player_preview_move = 0 #which row the current move is under
 player_turn  = True
 PLAYER_PIECE = BoardPiece.RED
 PLAYER_CHIP  = RED_CHIP
@@ -100,7 +99,7 @@ def draw_piece(x, y, chip):
 	'''Draws a piece on the board. Visually overwrites any piece that was in the location. ghosts can be used'''
 	global board, screen
 
-	start_cord = (BOARD_X + x*CHIP_SIZE, BOARD_Y + y*CHIP_SIZE)
+	start_cord = get_cords(x, y)
 	# the area that the chip takes up on the board, (x, y, width, height)
 	board_area = start_cord + (CHIP_SIZE, CHIP_SIZE)
 	
@@ -113,7 +112,7 @@ def clear_drawn_piece(x, y):
 	'''Clears a piece on the board, but only visually'''
 	global board, screen
 
-	start_cord = (BOARD_X + x*CHIP_SIZE, BOARD_Y + y*CHIP_SIZE)
+	start_cord = get_cords(x, y)
 	board_area = start_cord + (CHIP_SIZE, CHIP_SIZE)
 	
 	screen.blit(BG_IMG, start_cord, board_area)
@@ -121,12 +120,12 @@ def clear_drawn_piece(x, y):
 	
 def draw_preview_piece(chip):
 	'''Draws a preview piece above the board in the col of player_mov. Automatically clears the whole preview-piece area'''
-	global board, screen, player_move_preview
+	global board, screen, player_preview_move
 	
 	start_y = BOARD_Y - CHIP_SIZE - (3) * SCALE_FACTOR #3 = padding amount
 
 	#chip
-	chip_start_cord = (BOARD_X + player_move_preview*CHIP_SIZE, start_y) #5 = padding
+	chip_start_cord = (BOARD_X + player_preview_move*CHIP_SIZE, start_y)
 	
 	#preview area
 	preview_start_cord = (BOARD_X, start_y)
@@ -139,26 +138,33 @@ def draw_preview_piece(chip):
 	pass
 
 def handle_move_preview_input(chip, ghost, goingLeft):
-	'''Will adjust player_move_preview and update visuals to match the new state'''
-	global player_move_preview
+	'''Will adjust player_preview_move and update visuals to match the new state'''
+	global player_preview_move
 	
 	#clear the current ghost
-	clear_drawn_piece(player_move_preview, 5)
+	clear_drawn_piece(player_preview_move, 5)
 	
 	if goingLeft:
-		player_move_preview -= 1
-		if player_move_preview < 0:
-			player_move_preview = 6
+		player_preview_move -= 1
+		if player_preview_move < 0:
+			player_preview_move = 6
 	else:
-		player_move_preview += 1
-		if player_move_preview > 6:
-			player_move_preview = 0
+		player_preview_move += 1
+		if player_preview_move > 6:
+			player_preview_move = 0
 	
 	draw_preview_piece(chip)
-	draw_piece(player_move_preview, 5, ghost)
+	draw_piece(player_preview_move, 5, ghost)
 
-	
-#draw the important stuff just once, and then the screen gets selectively updated
+
+#utility draw functions
+def get_cords(x, y):
+	'''Returns a (px_x, px_y) pair representing the top left of the square (x,y) on the board. (0,0) is top left'''
+	return (BOARD_X + x*CHIP_SIZE, BOARD_Y + y*CHIP_SIZE)
+
+
+
+#draw the important stuff just once, then the screen gets selectively updated
 screen.blit(BG_IMG, (0,0))
 screen.blit(BOARD_IMG, (0,0))
 pygame.display.update()
@@ -176,11 +182,11 @@ while running:
 		#something pressed
 		if event.type == pygame.KEYDOWN:
 			if event.key == InputType.LEFT:
-				handle_move_preview_input(PLAYER_CHIP, PLAYER_GHOST, True)
+				handle_move_preview_input(PLAYER_CHIP, PLAYER_GHOST, goingLeft=True)
 				pygame.display.update()
 				
 			elif event.key == InputType.RIGHT:
-				handle_move_preview_input(PLAYER_CHIP, PLAYER_GHOST, False)
+				handle_move_preview_input(PLAYER_CHIP, PLAYER_GHOST, goingLeft=False)
 				pygame.display.update()
 
 			elif event.key == InputType.SELECT:
@@ -190,12 +196,3 @@ while running:
 		
 	#draw call
 	# running = False
-
-
-
-# draw_piece(0, 5, RED_CHIP)
-# draw_piece(1, 5, YEL_CHIP)
-# draw_piece(0, 4, RED_CHIP)
-# draw_piece(2, 5, YEL_CHIP)
-# draw_piece(3, 5, RED_CHIP)
-# pygame.display.update()
