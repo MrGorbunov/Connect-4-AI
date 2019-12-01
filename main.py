@@ -90,8 +90,6 @@ class InputType:
 	HOME   = pygame.K_SPACE
 
 game_state = GameState.PLAYER_MOVE
-FPS = 60
-DT = 1 / FPS
 
 preview_move = 0 #which row the current move is planned to be in
 
@@ -109,12 +107,16 @@ AI_GHOST = YEL_GHOST
 #distance (in px) between top of board and preview piece. positive is up
 PREVIEW_PADDING = -3 * SCALE_FACTOR
 
+FPS = 60
+
 #these track the piece that has just been dropped so as to animate it
 anim_piece_pos = (0, 0)
 anim_piece_y_vel = 0
 anim_piece_img = RED_CHIP
 anim_piece_destination = (0, 0)
-GRAVITY = 3 * SCALE_FACTOR
+bounces = 0
+GRAVITY = 20 * SCALE_FACTOR
+ACCEL_Y = GRAVITY * (1.0 / FPS)
 
 
 #setup the board
@@ -202,23 +204,31 @@ def handle_move_preview_input(chip, ghost, goingLeft):
 def handle_falling_animation():
 	'''Will draw and update values relating to a falling piece'''
 	global anim_piece_pos, anim_piece_y_vel, anim_piece_img, anim_piece_destination
-	
+	global ACCEL_Y, bounces
 	
 	#clear where the piece might've been last frame
 	clear_piece(anim_piece_pos)
 	
 	#compute physics
 	anim_piece_pos = list(anim_piece_pos)
-	# anim_piece_y_vel += GRAVITY / (clock.get_time() / 1000.0) #convert millseconds to seconds
+	
+	anim_piece_y_vel += ACCEL_Y
 	anim_piece_pos[1] += anim_piece_y_vel
 	
 	#check if it has reached the target y yet
 	if anim_piece_destination[1] <= anim_piece_pos[1]:
-		global game_state
-		print(anim_piece_destination[1], ' ', anim_piece_pos[1])
-		game_state = GameState.PLAYER_MOVE
 		anim_piece_pos[1] = anim_piece_destination[1]
 	
+		#this makes it bounce twice
+		if bounces > 1:
+			global game_state
+			game_state = GameState.PLAYER_MOVE
+			bounces = 0
+		else:
+			bounces += 1
+			#reverse dir and lose some speed
+			anim_piece_y_vel *= -0.4
+		
 	#redraw
 	anim_piece_pos = tuple(anim_piece_pos)
 	draw_piece(anim_piece_pos, anim_piece_img)
@@ -238,13 +248,10 @@ def set_falling_animation_parameters():
 		anim_piece_img = AI_CHIP
 	
 	anim_piece_pos = get_px_cords(preview_move, -1, PREVIEW_PADDING)
-	anim_piece_y_vel = SCALE_FACTOR
+	anim_piece_y_vel = 0
 	
 	#set to just be the bottom of the board
-	anim_piece_destination = get_px_cords(preview_move, 6)
-	
-	print(anim_piece_pos)
-	print(anim_piece_destination)
+	anim_piece_destination = get_px_cords(preview_move, 5)
 	
 	
 
@@ -275,10 +282,7 @@ while running:
 		
 		#doesn't listen to input, but still allows for closing the window
 		if game_state == GameState.ANIMATION:
-			handle_falling_animation()
-			print("handling yes")
 			break
-		
 		
 		
 		#something pressed
@@ -296,10 +300,12 @@ while running:
 				
 			elif event.key == InputType.HOME:
 				print("home")
-		
-	#draw call
+	
+	
+	#update based on game_state
 	if game_state == GameState.ANIMATION:
-		print("here too")
+		handle_falling_animation()
+	
 	pygame.display.update()
 	clock.tick(FPS)
 
