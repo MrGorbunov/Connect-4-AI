@@ -9,12 +9,13 @@ Michael Gorbunov
 
 '''
 TODO
--Create classes for data chunks
 -Require almost 0 parameters with most functions
+-Create classes for data chunks
+
 -Adapt to work with Dennis' gamestate
--Add input from buttons
 -Split multiple files
 
+-Add input from buttons
 -SFX
 '''
 
