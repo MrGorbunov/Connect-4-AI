@@ -14,9 +14,3 @@ All function names have a verb in their name. Use **`check_vertical_win():`** ov
 Always have function lines - the **`''' Description of function '''`** that is the first line of a function
 
 \#-------------- These are used to seperate / group parts of code ----------------------------
-
-
----
-## Functional / Architecture
-
-Functions either return something and are fully parameterized (do not change state) *or* only touch state and return nothing
