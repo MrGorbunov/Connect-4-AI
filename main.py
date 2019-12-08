@@ -7,17 +7,6 @@ Michael Gorbunov
 11/29/19 - 
 '''
 
-'''
-TODO
--Make way to restart / play again
--Have win showcase / drawing
-   => requires restructuring boardclass to return piece cords
--Add input from buttons
-
-
--SFX
-'''
-
 from enum import IntEnum
 from boardclass import Board
 import pygame
