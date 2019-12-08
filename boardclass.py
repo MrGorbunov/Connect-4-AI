@@ -15,12 +15,11 @@ class Board():
 
         self.turn = 0
 
-
     def changeTurn(self):
         self.turn = self.turn + 1
 
     def empty_slots_in_col(self, col_ind):
-	'''Returns the number of empty slots in column col_ind. Must be 0-6 (inclusive)'''
+	      '''Returns the number of empty slots in column col_ind. Must be 0-6 (inclusive)'''
         empty_slots = 6
 
         for row in self.boardState:
@@ -28,7 +27,7 @@ class Board():
                 empty_slots -= 1
 
         return empty_slots
-
+     
     def isCompTurn(self):
         return self.turn % 2 == 0
 
