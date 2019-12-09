@@ -1,3 +1,12 @@
+def turn(b, ind):
+    b.editBoard(ind)
+    b.update_connections([ind, 5 - b.empty_slots_in_col(ind)], b.turn % 2 + 1)
+    b.changeTurn()
+    b.printBoard()
+    print('')
+
+
+
 class Board():
     n = 0
     r = 1
@@ -14,12 +23,25 @@ class Board():
         self.boardState = [self.row0, self.row1, self.row2, self.row3, self.row4, self.row5]
 
         self.turn = 0
+       
+        #Instead of doing a full-board sweep everytime to check for a win / connections (minmax)
+        #this array gets updated and keeps track of all connections of length 1 or higher
+        #example: [ [1, [0,1], [1,1]],  [2, [0,0], [1,0], [2,0]] ]
+        #1 or 2 refers to the color, each [col,row] pair is the actual pieces in the connection
+        #this means that the win check is now just seeing if len(connections[i]) > 4
+        self.connections = []
+        #When a connection is surrounded on both ends by an opposing color, it becomes dead
+        self.dead_connections = []
 
     def changeTurn(self):
         self.turn = self.turn + 1
 
+    def test_func(self):
+        print("hi")
+        pass
+
     def empty_slots_in_col(self, col_ind):
-	      '''Returns the number of empty slots in column col_ind. Must be 0-6 (inclusive)'''
+        '''Returns the number of empty slots in column col_ind. Must be 0-6 (inclusive)'''
         empty_slots = 6
 
         for row in self.boardState:
@@ -27,6 +49,91 @@ class Board():
                 empty_slots -= 1
 
         return empty_slots
+
+    def get_chain(self, start_cord, direction, piece_value):
+        '''Will iterate along direction and return any connections. Goes backwards and forwards'''
+        #start_cord = [x, y]
+        #direction = [dx, dy]
+        #piece_value = 1, 2
+
+        cur_cord = list(start_cord)
+        #this gets built up during the loops
+        #having piece_value identifies which side the chain belongs to
+        #NOTE: the fact that the start_cord is index is 2 is uesed in update_connections
+        #do not change that (or go change it there)
+        cur_chain = [piece_value, start_cord]
+        
+        #if the starting piece is not the right color
+        if self.boardState[cur_cord[1]][cur_cord[0]] != piece_value:
+            return [0]
+
+        for i in range(2):
+            
+            #this will iterate forward along direction
+            while True:
+                cur_cord[0] += direction[0]
+                cur_cord[1] += direction[1]
+
+                #check if still on board
+                if not (cur_cord[0] >= 0 and cur_cord[0] <= 6 and
+                        cur_cord[1] >= 0 and cur_cord[1] <= 5):
+                    break
+
+                #check if the new cordinate is the same piece
+                if self.boardState[cur_cord[1]][cur_cord[0]] != piece_value:
+                    break
+                
+                #if both checks pass, then that means that this is a connection
+                cur_chain.append(list(cur_cord))
+
+            #after one loop, we want to invert the direction
+            direction[0] *= -1
+            direction[1] *= -1
+            cur_cord = list(start_cord)
+
+        #at the end, just return the chain 
+        return cur_chain
+
+    def update_connections(self, piece_cord, piece_value):
+        '''Will check for new connections at piece_cord and update internal connection list'''
+        directions = [ [0,1], [1,1], [1,0] , [1, -1] ]
+
+        for direct in directions:
+            new_chain = self.get_chain(piece_cord, direct, piece_value)
+            print(new_chain) 
+
+            if len(new_chain) > 2:
+                if len(new_chain) == 3:
+                    #this is a completely new chain
+                    self.connections.append(new_chain)
+                    continue
+                
+                #looking for which chain to override 
+                for old_chain in self.connections:
+                    #checks if correct length and same piece values
+                    if len(old_chain) == len(new_chain) - 1 and old_chain[0] == new_chain[0]: 
+                           #[0] = piece_value, [1] = first piece of the check
+                           #remove [1] from new_chain should leave same
+                           #values as old_chain (different order though)
+                           preserved_chain = new_chain 
+                           new_chain = new_chain[2:]
+                           old_chain = old_chain[1:]
+
+                           for cord in new_chain:
+                               for old_cord in old_chain:
+                                   if old_cord == cord:
+                                       old_chain.remove(cord)
+                                       print(old_cord)
+                                       break
+                           
+                           if len(old_chain) == 0:
+                              print(new_chain) 
+                              #this is the guy
+                              self.connections.remove(preserved_chain[:1] + preserved_chain[2:])
+                              self.connections.append(preserved_chain)
+
+
+
      
     def isCompTurn(self):
         return self.turn % 2 == 0
@@ -39,46 +146,6 @@ class Board():
                 else:  # if it is player 2's turn
                     self.boardState[i][moveNumber] = self.y
                 break
-
-    def horizontalWin(self):
-        isWin = False
-        for i in range(0, len(self.boardState)):
-            for j in range(0, len(self.row0)):
-                if j + 3 < len(self.row0):
-                    if self.boardState[i][j] == self.boardState[i][j + 1] == self.boardState[i][j + 2] == self.boardState[i][j + 3] != self.n:
-                        isWin = True
-                        return isWin
-        return isWin
-
-    def verticalWin(self):
-        isWin = False
-        for i in range(0, len(self.boardState)):
-            for j in range(0, len(self.row0)):
-                if i + 3 < len(self.boardState):
-                    if self.boardState[i][j] == self.boardState[i + 1][j] == self.boardState[i + 2][j] == self.boardState[i + 3][j] != self.n:
-                        isWin = True
-                        return isWin
-        return isWin
-
-    def diagonalRightWin(self):
-        isWin = False
-        for i in range(0, len(self.boardState)):
-            for j in range(0, len(self.row0)):
-                if i + 3 < len(self.boardState) and j + 3 < len(self.row0):
-                    if self.boardState[i][j] == self.boardState[i + 1][j + 1] == self.boardState[i + 2][j + 2] == self.boardState[i + 3][j + 3] != self.n:
-                        isWin = True
-                        return isWin
-        return isWin
-
-    def diagonalLeftWin(self):
-        isWin = False
-        for i in range(0, len(self.boardState)):
-            for j in range(0, len(self.row0)):
-                if j - 3 >= 0 and i + 3 < len(self.boardState):
-                    if self.boardState[i][j] == self.boardState[i + 1][j - 1] == self.boardState[i + 2][j - 2] == self.boardState[i + 3][j - 3] != self.n:
-                        isWin = True
-                        return isWin
-        return isWin
 
     def isWinner(self):
         win = False

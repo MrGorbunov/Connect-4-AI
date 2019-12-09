@@ -5,7 +5,7 @@
 
 [ ] Min Max Algorithim
 
-[ ] Rework board class to track connections
+[X] Rework board class to track connections
    This will save a lot of compute time because
    new instances will not need to recheck entire board.
    Also gives info needed to draw the winning streak.
