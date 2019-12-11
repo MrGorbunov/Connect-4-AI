@@ -191,11 +191,13 @@ class Board():
                     self.boardState[i][moveNumber] = self.y
                 break
 
-    def isWinner(self):
-        win = False
-        if self.horizontalWin() or self.verticalWin() or self.diagonalRightWin() or self.diagonalLeftWin():
-            win = True
-        return win
+    def is_winner(self):
+        '''Returns True if there is a winner'''
+        for con in self.connections:
+            if len(con) >= 5:
+                return True
+
+        return False
 
     def printBoard(self):
         print(self.row5)

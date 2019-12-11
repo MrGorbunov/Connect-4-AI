@@ -23,7 +23,7 @@ SCALE_FACTOR = 6
 SCREEN_WIDTH = 160 * SCALE_FACTOR // 1 #//1 = floor function
 SCREEN_HEIGHT = 120 * SCALE_FACTOR // 1
 pygame.display.set_caption("Connect 4 AI")
-ICON = pygame.image.load("img/red_piece.png")
+ICON = pygame.image.load("img/piece/red_piece.png")
 pygame.display.set_icon(ICON)
 
 #global pygame stuff
@@ -42,10 +42,10 @@ CHIP_SIZE = 16 * SCALE_FACTOR
 #distance (px) between the top of the board and the preview piece
 PREVIEW_PADDING = -3 * SCALE_FACTOR
 
-PLAYER_GHOST_IMG = pygame.image.load("img/ghost_red_piece.png")
-PLAYER_PIECE_IMG = pygame.image.load("img/red_piece.png")
-AI_PIECE_IMG     = pygame.image.load("img/yel_piece.png")
-AI_GHOST_IMG     = pygame.image.load("img/ghost_yel_piece.png")
+PLAYER_GHOST_IMG = pygame.image.load("img/piece/ghost_red_piece.png")
+PLAYER_PIECE_IMG = pygame.image.load("img/piece/red_piece.png")
+AI_PIECE_IMG     = pygame.image.load("img/piece/yel_piece.png")
+AI_GHOST_IMG     = pygame.image.load("img/piece/ghost_yel_piece.png")
 
 
 #scaling the images up
