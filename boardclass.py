@@ -1,9 +1,12 @@
-def turn(b, ind):
-    b.editBoard(ind)
-    b.update_connections([ind, 5 - b.empty_slots_in_col(ind)], b.turn % 2 + 1)
-    b.changeTurn()
-    b.printBoard()
-    print('')
+def array_dif (arr1, arr2):
+    diff = list(arr1)
+
+    for a in arr1:
+        for b in arr2:
+            if a == b:
+                diff.remove(a)
+
+    return diff
 
 
 
@@ -30,11 +33,24 @@ class Board():
         #1 or 2 refers to the color, each [col,row] pair is the actual pieces in the connection
         #this means that the win check is now just seeing if len(connections[i]) > 4
         self.connections = []
-        #When a connection is surrounded on both ends by an opposing color, it becomes dead
+        #When a connection is surrounded on both ends by an opposing color, it becomes _ead
         self.dead_connections = []
 
     def changeTurn(self):
         self.turn = self.turn + 1
+
+
+
+    def handle_turn(self, move_ind, print_to_console = False):
+        '''Calls everything necessary to process one turn'''
+        self.editBoard(move_ind)
+        self.update_connections([move_ind, 5 - self.empty_slots_in_col(move_ind)])
+        self.changeTurn()
+
+        if print_to_console:
+            self.printBoard()
+
+
 
     def empty_slots_in_col(self, col_ind):
         '''Returns the number of empty slots in column col_ind. Must be 0-6 (inclusive)'''
@@ -47,134 +63,136 @@ class Board():
         return empty_slots
 
 
-
-    def get_chain(self, start_cord, direction, piece_value):
-        '''Will iterate along direction and return any connections. Goes backwards and forwards'''
-        #start_cord = [x, y]
-        #direction = [dx, dy]
-        #piece_value = 1, 2
-
+    def iterate_along(self, start_cord, direction, piece_value):
+        '''Returns the cords of a chain and what stopped it; 0=air, 1,2=piece, 3=wall; assumes inputs are correct'''
+        cur_val = piece_value
         cur_cord = list(start_cord)
-        #NOTE: the fact that the start_cord is index is 2 is used in update_connections
-        #do not change that (or go change it there), and
-        #the fact the the last index is the end of the iteration is used in get_dead_chain 
-        cur_chain = [piece_value, start_cord]
-        
-        #if the starting piece is not the right color
-        if self.boardState[cur_cord[1]][cur_cord[0]] != piece_value:
-            return [0]
+        return_list = [0, start_cord]
 
-        for i in range(2):
-            
-            #this will iterate forward along direction, at most 4 times
-            for j in range(4):
-                cur_cord[0] += direction[0]
-                cur_cord[1] += direction[1]
+        while (cur_val == piece_value): 
+            cur_cord[0] += direction[0] 
+            cur_cord[1] += direction[1]
 
-                #check if still on board
-                if not (cur_cord[0] >= 0 and cur_cord[0] <= 6 and
-                        cur_cord[1] >= 0 and cur_cord[1] <= 5):
-                    break
-
-                #check if the new cordinate is the same piece
-                if self.boardState[cur_cord[1]][cur_cord[0]] != piece_value:
-                    break
-                
-                #if both checks pass, then that means that this is a connection
-                cur_chain.append(list(cur_cord))
-
-            #after one loop, we want to invert the direction
-            direction[0] *= -1
-            direction[1] *= -1
-            cur_cord = list(start_cord)
-
-        #at the end, just return the chain 
-        return cur_chain
+            if (cur_cord[0] < 0 or cur_cord[0] > 6 or
+                cur_cord[1] < 0 or cur_cord[1] > 5):
+                cur_val = 3
+                break
 
 
+            cur_val = self.boardState[cur_cord[1]][cur_cord[0]]
 
-    def get_dead_chain(self, start_cord, direction, piece_value):
-        '''Will iterate along direction and return a chain if it has been blocked off. piece_value is of the chain. Assumes that one end is blocked off by default (in calling this function)'''
-        cur_cord = list([start_cord[0] + direction[0], start_cord[1] + direction[1]])
-        cur_chain = self.get_chain(cur_cord, direction, piece_value)
+            if cur_val != piece_value:
+                break
 
-        #[1 or 2, cord] chains are not in connections, so can be ignored
-        if len(cur_chain) <= 2:
-            return [0]
+            return_list += [list(cur_cord)]
 
-        #because of the order of iteration, the last cord in cur_chain is in the direction of direction
-        #so cur_chain[-1] + direction = cord of piece to check
-        cord_to_check = [cur_chain[-1][0] + direction[0], cur_chain[-1][1] + direction[1]]
-        blocked = False 
 
-        if cord_to_check[0] > 6 or cord_to_check[0] < 0 or cord_to_check[1] > 5 or cord_to_check[1] < 0:
-           return cur_chain 
-        
-        if self.boardState[cord_to_check[1]][cord_to_check[0]] != 0:
-           return cur_chain
+        return_list[0] = cur_val
+        return return_list
 
-        return [0]
 
-         
-
-    def update_connections(self, piece_cord, piece_value):
+    def update_connections(self, piece_cord):
         '''Will check for new connections at piece_cord and update internal connection list'''
-        directions = [ [0,1], [1,1], [1,0] , [1, -1] ]
+        piece_value = self.boardState[piece_cord[1]][piece_cord[0]]
+   
+        #have this handy
+        other_piece = 1
+        if piece_value == 1:
+            other_piece = 2
+        
+        center_cord = piece_cord
+        dirs = [[0,1], [1,1], [1,0], [-1,1]]
 
-        for direct in directions:
-            new_chain = self.get_chain(piece_cord, direct, piece_value)
+        for direc in dirs:
+            alt_direc = [direc[0] * -1, direc[1] * -1]
+            
+            connection = self.iterate_along(center_cord, direc, piece_value)
+            other_con = self.iterate_along(center_cord, alt_direc, piece_value)
+            true_con = [piece_value] + connection[1:] + other_con[2:]
 
-            if len(new_chain) > 2:
-                if len(new_chain) == 3:
-                    #this is a completely new chain
-                    self.connections.append(new_chain)
-                    print("Alive: " + str(new_chain)) 
-                    continue
+            #we don't care about length-1 "connection" i.e. solo pieces
+            if len(true_con) > 2:
+                winning_con = len(true_con) >= 5
+                free_one_side = connection[0] == 0
+                free_other_side = other_con[0] == 0
                 
-                #looking for which chain to override 
-                for old_chain in self.connections:
-                    #checks if correct length and same piece values
-                    if len(old_chain) == len(new_chain) - 1 and old_chain[0] == new_chain[0]: 
-                           #[0] = piece_value, [1] = first piece of the check
-                           #remove [1] from new_chain should leave same
-                           #values as old_chain (different order though)
-                           preserved_chain = new_chain 
-                           new_chain = new_chain[2:]
-                           old_chain = old_chain[1:]
+                if free_one_side or free_other_side or winning_con:
+                    print "should be adding, " + str(true_con)
+                    self.add_to_connections(true_con)
 
-                           #finding difference in the two
-                           for cord in new_chain:
-                               for old_cord in old_chain:
-                                   if old_cord == cord:
-                                       old_chain.remove(cord)
-                                       print(old_cord)
-                                       break
-                          
-                           #if there is 0 difference
-                           if len(old_chain) == 0:
-                              print("Alive: " + str(new_chain)) 
-                              #this is the guy
-                              self.connections.remove(preserved_chain[:1] + preserved_chain[2:])
-                              self.connections.append(preserved_chain)
+                else:
+                    #this connection is blocked off
+                    self.add_dead_connection(true_con)
+                     
 
-            #chain less than 2, check if just blocked something off
-            else:
+            #check for having blocked the other piece
+            if len(connection) <= 2:
+                if connection[0] != 3 and connection[0] != 0:
+                    self.check_for_blocking(center_cord, direc, other_piece)
+            
+            if len(other_con) <= 2:
+                if other_con[0] != 3 and other_con[0] != 0:
+                    self.check_for_blocking(center_cord, alt_direc, other_piece)
 
-                other_value = 1
-                if piece_value == 1:
-                    other_value = 2
+        print "checkd for connections and dead connections"
 
-                #get_dead_chain will not invert direction, so we must check twice
-                for i in range(2):
-                   dead_chain = self.get_dead_chain(piece_cord, direct, other_value)
-                   if dead_chain != [0]: 
-                       print("Dead: " + str(dead_chain))
-                       self.connections.remove(dead_chain)
-                       self.dead_connections.append(dead_chain)
 
-                   #inverting direction for the next iteration
-                   direct[0] *= -1
-                   direct[1] *= -1
+
+    def check_for_blocking(self, center, direction, other_piece):
+        '''Checks if the end of the chain along direction is blocked'''
+        offset_cord = [center[0] + direction[0], center[1] + direction[1]]
+        enemy_chain = self.iterate_along(offset_cord, direction, other_piece)
+
+        if enemy_chain[0] != 0:
+            #just got blocked off
+            self.add_dead_connection([other_piece] + enemy_chain)
+
+
+
+    def add_dead_connection(self, connection):
+        '''Will remove the conncetion from connections, and add it to dead connections'''
+        for con in self.connections:
+            if len(array_dif(con, connection)) == 0:
+                self.connections.remove(con)
+                self.dead_connections += [con]
+                print "moved to dead " + str(con)
+
+
+
+
+    def add_to_connections(self, connection):
+        '''Will remove the old connection, and add the new one'''
+        if len(connection) == 2: 
+            return
+        elif len(connection) == 3:
+            self.connections += [connection]
+            print "here"
+            return
+
+        for old_con in self.connections:
+            #must go out and find the old connection to replace
+            if len(old_con) != len(connection) - 1:
+                continue
+
+            #important that old_con is first
+            diff = array_dif(old_con, connection)
+
+            if len(diff) != 0:
+                continue
+
+            self.connections.remove(old_con)
+            self.connections += [connection]
+            return
+       
+        #possible that this was X _ X => X X X
+        self.connections += [connection]
+
+        print "add_to_connections called"
+
+
+            
+
+
 
 
 
@@ -192,12 +210,21 @@ class Board():
                 break
 
     def is_winner(self):
-        '''Returns True if there is a winner'''
+        '''Returns whether or not there is a winner'''
         for con in self.connections:
             if len(con) >= 5:
                 return True
 
         return False
+
+    def get_winning_connection(self):
+        '''Returns the winning connection [1, cord, ...] if there is a winner, otherwise []'''
+        for con in self.connections:
+            if len(con) >= 5:
+                return con
+
+        return []
+
 
     def printBoard(self):
         print(self.row5)
@@ -207,3 +234,5 @@ class Board():
         print(self.row1)
         print(self.row0)
         print(" 1  2  3  4  5  6  7")
+
+

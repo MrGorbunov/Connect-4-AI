@@ -31,6 +31,7 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 clock = pygame.time.Clock()
 
 
+#
 #loading all images
 BG_IMG    = pygame.image.load("img/wall.png")
 BOARD_IMG = pygame.image.load("img/gameboard.png")
@@ -47,15 +48,26 @@ PLAYER_PIECE_IMG = pygame.image.load("img/piece/red_piece.png")
 AI_PIECE_IMG     = pygame.image.load("img/piece/yel_piece.png")
 AI_GHOST_IMG     = pygame.image.load("img/piece/ghost_yel_piece.png")
 
+CROSS_HORIZ = pygame.image.load("img/cross/cross_horiz.png")
+CROSS_VERT  = pygame.image.load("img/cross/cross_vert.png") 
+CROSS_NW    = pygame.image.load("img/cross/cross_diag_nw.png")
+CROSS_NE    = pygame.image.load("img/cross/cross_diag_ne.png") 
+
 
 #scaling the images up
 BG_IMG    = pygame.transform.scale(BG_IMG, (SCREEN_WIDTH, SCREEN_HEIGHT))
 BOARD_IMG = pygame.transform.scale(BOARD_IMG, (SCREEN_WIDTH, SCREEN_HEIGHT))
 #image size of 16x16 assumed for the pieces
-PLAYER_PIECE_IMG = pygame.transform.scale(PLAYER_PIECE_IMG,  (CHIP_SIZE, CHIP_SIZE)) 
+PLAYER_PIECE_IMG = pygame.transform.scale(PLAYER_PIECE_IMG, (CHIP_SIZE, CHIP_SIZE)) 
 PLAYER_GHOST_IMG = pygame.transform.scale(PLAYER_GHOST_IMG, (CHIP_SIZE, CHIP_SIZE))
 AI_PIECE_IMG     = pygame.transform.scale(AI_PIECE_IMG,  (CHIP_SIZE, CHIP_SIZE))
 AI_GHOST_IMG     = pygame.transform.scale(AI_GHOST_IMG, (CHIP_SIZE, CHIP_SIZE))
+#cross images
+CROSS_HORIZ = pygame.transform.scale(CROSS_HORIZ, (CHIP_SIZE, CHIP_SIZE))
+CROSS_VERT  = pygame.transform.scale(CROSS_VERT, (CHIP_SIZE, CHIP_SIZE))
+CROSS_NW    = pygame.transform.scale(CROSS_NW, (CHIP_SIZE, CHIP_SIZE))
+CROSS_NE    = pygame.transform.scale(CROSS_NE, (CHIP_SIZE, CHIP_SIZE))
+
 
 #draw BG => then later it just gets overwritten in specific places
 screen.blit(BG_IMG, (0,0))
@@ -120,9 +132,17 @@ if board.isCompTurn():
 
 #--------------------------- Basic Drawing Functions ---------------------------------
 #all x,y are in pixel space
+def draw_piece_over(pos, img):
+    '''Draws img at pos without clearing it. Assumes img is CHIP_SIZE x CHIP_SIZE'''
+    global screen
+
+    board_area = pos + (CHIP_SIZE, CHIP_SIZE)
+    screen.blit(img, pos)
+
+
 def draw_piece(pos, chip):
 	'''Draws a piece on the board. pos is a (px_x, px_y) Visually overwrites any piece that was in the location. Assumes chip is an image of CHIP_SIZE x CHIP_SIZE dimensiom'''
-	global board, screen
+	global screen
 	
 	# the area that the chip takes up on the board, (x, y, width, height)
 	board_area = pos + (CHIP_SIZE, CHIP_SIZE)
@@ -135,7 +155,7 @@ def draw_piece(pos, chip):
 
 def clear_piece(pos):
 	'''Clears a piece on the board, but only visually. pos is a (px_x, px_y)'''
-	global board, screen
+	global screen
 
 	board_area = pos + (CHIP_SIZE, CHIP_SIZE)
 	
@@ -224,7 +244,7 @@ def finish_fall_animation():
 	handle_move_preview_input(preview_move)
 
 	#win check
-	if board.isWinner():
+	if board.is_winner():
 		global running
 		running = False
 	
@@ -250,25 +270,49 @@ def set_falling_animation_parameters():
 	#set to just be the bottom of the board
 	fall_anim['dest'] = get_px_cords(preview_move, board.empty_slots_in_col(preview_move) - 1)
 	
+def draw_winning_connection():
+    '''Draws the winning connection onto the display'''
+    #first, get the winning connection
+    winner = board.get_winning_connection()
 
+    #determine direction, then image
+    con_dir = [winner[1][0] - winner[2][0], winner[1][1] - winner[2][1]]
+    cross_img = CROSS_NW
 
+    #con_dir could be the negative version of a dir, hence the or
+    if con_dir == [0, 1] or con_dir == [0, -1]:
+        cross_img = CROSS_VERT
+    elif con_dir == [1, 0] or con_dir == [-1, 0]:
+        cross_img = CROSS_HORIZ
+    elif con_dir == [1, 1] or con_dir == [-1, -1]:
+        cross_img = CROSS_NE
+    else:
+        cross_img = CROSS_NW
+
+    #actually draw the bad bois
+    winner = winner[1:]
+    for cord in winner:
+        cur_cord = get_px_cords(cord[0], 5 - cord[1]) 
+        draw_piece_over(cur_cord, cross_img) 
+        print str(cur_cord)
 
 
 
 
 #--------------------------------- Game Logic Commands --------------------------------	
 def handle_move_logic():
-	'''Updates the Board instance (board) and cur_images'''
-	global cur_piece_img, cur_ghost_img
-	board.editBoard(preview_move)
-	board.changeTurn()
-	
-	if board.isCompTurn():
-		cur_piece_img = AI_PIECE_IMG
-		cur_ghost_img = AI_GHOST_IMG
-	else:
-		cur_piece_img = PLAYER_PIECE_IMG
-		cur_ghost_img = PLAYER_GHOST_IMG
+    '''Updates the Board instance (board) and cur_images'''
+    global cur_piece_img, cur_ghost_img
+
+    print "handling move logic"
+    board.handle_turn(preview_move)
+    
+    if board.isCompTurn():
+            cur_piece_img = AI_PIECE_IMG
+            cur_ghost_img = AI_GHOST_IMG
+    else:
+            cur_piece_img = PLAYER_PIECE_IMG
+            cur_ghost_img = PLAYER_GHOST_IMG
 	
 
 
@@ -321,10 +365,12 @@ while running:
 	#update based on game_state
 	if game_state == GAME_STATE['ANIMATION']:
 		handle_falling_animation()
-	
+
 	pygame.display.update()
 	clock.tick(FPS)
 
 
 #this way there's a delay and you can admire the victory
+draw_winning_connection()
+pygame.display.update()
 asd = input()
