@@ -42,13 +42,17 @@ class Board():
 
 
     def handle_turn(self, move_ind, print_to_console = False):
-        '''Calls everything necessary to process one turn'''
-        self.editBoard(move_ind)
-        self.update_connections([move_ind, 5 - self.empty_slots_in_col(move_ind)])
-        self.changeTurn()
+        '''Calls everything necessary to process one turn, returns True if valid move'''
+        if self.editBoard(move_ind):
+            self.update_connections([move_ind, 5 - self.empty_slots_in_col(move_ind)])
+            self.changeTurn()
 
-        if print_to_console:
-            self.printBoard()
+            if print_to_console:
+                self.printBoard()
+
+            return True
+
+        return False
 
 
 
@@ -117,7 +121,6 @@ class Board():
                 free_other_side = other_con[0] == 0
                 
                 if free_one_side or free_other_side or winning_con:
-                    print "should be adding, " + str(true_con)
                     self.add_to_connections(true_con)
 
                 else:
@@ -134,8 +137,6 @@ class Board():
                 if other_con[0] != 3 and other_con[0] != 0:
                     self.check_for_blocking(center_cord, alt_direc, other_piece)
 
-        print "checkd for connections and dead connections"
-
 
 
     def check_for_blocking(self, center, direction, other_piece):
@@ -145,17 +146,20 @@ class Board():
 
         if enemy_chain[0] != 0:
             #just got blocked off
-            self.add_dead_connection([other_piece] + enemy_chain)
+            self.add_dead_connection([other_piece] + enemy_chain[1:])
 
 
 
     def add_dead_connection(self, connection):
         '''Will remove the conncetion from connections, and add it to dead connections'''
+        # < 5 prevents winning connections from being removed
+        if len(connection) >= 5:
+            return
+
         for con in self.connections:
             if len(array_dif(con, connection)) == 0:
                 self.connections.remove(con)
                 self.dead_connections += [con]
-                print "moved to dead " + str(con)
 
 
 
@@ -166,7 +170,6 @@ class Board():
             return
         elif len(connection) == 3:
             self.connections += [connection]
-            print "here"
             return
 
         for old_con in self.connections:
@@ -187,27 +190,23 @@ class Board():
         #possible that this was X _ X => X X X
         self.connections += [connection]
 
-        print "add_to_connections called"
-
-
-            
-
-
-
-
-
      
     def isCompTurn(self):
         return self.turn % 2 == 0
 
     def editBoard(self, moveNumber):
-        for i in range(0, len(self.boardState)):  # checks for each row in a column for empty space
-            if self.boardState[i][moveNumber] == self.n:  # if the spot you want to place in is not occupied
+        '''Adds a piece in the column moveNumber. Returns True if successful'''
+        # checks for each row in a column for empty space
+        for i in range(0, len(self.boardState)):    
+            # if the spot you want to place in is not occupied
+            if self.boardState[i][moveNumber] == self.n:
                 if self.isCompTurn():  # if it is player 1's turn
                     self.boardState[i][moveNumber] = self.r
                 else:  # if it is player 2's turn
                     self.boardState[i][moveNumber] = self.y
-                break
+                return True
+
+        return False
 
     def is_winner(self):
         '''Returns whether or not there is a winner'''
@@ -227,12 +226,16 @@ class Board():
 
 
     def printBoard(self):
-        print(self.row5)
-        print(self.row4)
-        print(self.row3)
-        print(self.row2)
-        print(self.row1)
-        print(self.row0)
-        print(" 1  2  3  4  5  6  7")
+        for row_ind in range(5, -1, -1):
+            row = self.boardState[row_ind]
+
+            for piece in row:
+                if piece == 0:
+                    print "| ",
+                else:
+                    print "|" + str(piece),
+            print ""
+
+        print(" 0  1  2  3  4  5  6 ")
 
 

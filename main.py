@@ -10,6 +10,7 @@ Michael Gorbunov
 
 from enum import IntEnum
 from boardclass import Board
+from algorithm import *
 import pygame
 
 
@@ -304,8 +305,8 @@ def handle_move_logic():
     '''Updates the Board instance (board) and cur_images'''
     global cur_piece_img, cur_ghost_img
 
-    print "handling move logic"
     board.handle_turn(preview_move)
+    print "eval: " + str(static_eval(board))
     
     if board.isCompTurn():
             cur_piece_img = AI_PIECE_IMG
