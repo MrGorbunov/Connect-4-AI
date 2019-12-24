@@ -10,10 +10,10 @@
    new instances will not need to recheck entire board.
    Also gives info needed to draw the winning connection
    Puts blocked off chains into dead\_chains list
-- [#] Static evalutations
+- [X] Static evalutations
    It would be really cool to have different evaluations
    and put them against each other.   
-- [ ] Minmax Implementation
+- [X] Minmax Implementation
 - [ ] Alpha / Beta Pruning
 - [X] Integrate to work with GUI
 - [ ] Order optimization

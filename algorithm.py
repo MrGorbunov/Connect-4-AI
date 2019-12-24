@@ -28,6 +28,7 @@ def static_eval(board):
     return board_eval
 
 
+
 def get_best_move(board, depth):
     '''Will recursively find the best move via min max. Depth 1 = one layer, not one round'''
     if depth == 0:
@@ -39,45 +40,35 @@ def get_best_move(board, depth):
     if not board.isCompTurn():
             minimize = True
 
-    print "minimize: " + str(minimize)
+    best_move = None 
+    best_value = None
 
 
-
-    best_move = 0 
-    best_value = 0
-    alt_board = copy.deepcopy(board) 
-    alt_board.handle_turn(0)
-
-    if minimize:
-        best_value = min_outcome(alt_board, depth)
-    else:
-        best_value = max_outcome(alt_board, depth)
- 
-    print "mov: 0 val: {0} d: {1}".format(best_value, depth)
-
-    for i in range(1, 7):
+    for i in range(0, 7):
         alt_board = copy.deepcopy(board)
-        alt_board.handle_turn(i)
+
+        if alt_board.handle_turn(i) == False:
+            #invalid move
+            continue
 
         if minimize:
             valuation = max_outcome(alt_board, depth)
             
-            print "mov: {0} val: {1} d: {2}".format(i, valuation, depth)
-
-            if valuation < best_value:
+            if valuation < best_value or best_value == None:
                 best_value = valuation
                 best_move = i
 
         else:
             valuation = max_outcome(alt_board, depth)
 
-            print "mov: {0} val: {1} d: {2}".format(i, valuation, depth)
-
-            if valuation > best_value:
+            if valuation > best_value or best_value == None:
                 best_value = valuation
                 best_move = i
 
+
     return best_move
+
+
 
 
 

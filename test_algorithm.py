@@ -42,7 +42,6 @@ def guaranteed_wins():
         b.printBoard()
         print "failed to win 100% win situation"
     else:
-        b.printBoard()
         print "correctly looked two turns ahead"
     
 
