@@ -45,6 +45,7 @@ def get_best_move(board, depth):
 
 
     for i in range(0, 7):
+        print "doing move {0}".format(i)
         alt_board = copy.deepcopy(board)
 
         if alt_board.handle_turn(i) == False:
@@ -52,21 +53,27 @@ def get_best_move(board, depth):
             continue
 
         if minimize:
-            valuation = max_outcome(alt_board, depth)
+            #minimze the maxima
+            valuation = max_outcome(alt_board, depth, best_value)
             
             if valuation < best_value or best_value == None:
                 best_value = valuation
                 best_move = i
+            
+            print "valuation came out to {0}".format(valuation)
 
         else:
-            valuation = max_outcome(alt_board, depth)
+            #maximize the minima
+            valuation = min_outcome(alt_board, depth, best_value)
 
             if valuation > best_value or best_value == None:
                 best_value = valuation
                 best_move = i
-
+        
+        print " "
 
     return best_move
+
 
 
 
@@ -76,7 +83,14 @@ def get_best_move(board, depth):
 # There are two almost identical functions to avoid if/elses
 # These functions are called thousands of times so minor optimizations add up
 
-def min_outcome(board, depth):
+
+#for reference, here are some benchmarks for depth 7 searches
+#w/ pruning: 43s
+#w/o pruning: 2:43 = 163s
+
+
+#cur_min & max are used for alpha-beta pruning
+def min_outcome(board, depth, cur_max):
     '''Will return the minimum possible outcome given depth, not what moves made it'''
     if depth == 0:
         return static_eval(board)
@@ -85,20 +99,28 @@ def min_outcome(board, depth):
     #handle first move
     alt_board = copy.deepcopy(board)
     alt_board.handle_turn(0)
-    min_value = max_outcome(alt_board, depth)
+    min_value = max_outcome(alt_board, depth, None)
+
+    if min_value <= cur_max:
+        return min_value
     
     #handle rest of moves
     for i in range(1, 7):
         alt_board = copy.deepcopy(board)
         alt_board.handle_turn(i)
-        value = max_outcome(alt_board, depth)
+        value = max_outcome(alt_board, depth, min_value)
+
+        #pruning
+        if value <= cur_max:
+            return value
 
         if value < min_value:
             min_value = value
+    
     return min_value
 
 
-def max_outcome(board, depth):
+def max_outcome(board, depth, cur_min):
     '''Will return the maximum possible outcome given depth, not what moves made it'''
     if depth == 0:
         return static_eval(board)
@@ -107,13 +129,20 @@ def max_outcome(board, depth):
     #handle first move
     alt_board = copy.deepcopy(board)
     alt_board.handle_turn(0)
-    max_value = min_outcome(alt_board, depth)
+    max_value = min_outcome(alt_board, depth, None)
+    
+    if max_value >= cur_min and cur_min != None:
+        return max_value
 
     #handle rest
     for i in range(1, 7):
         alt_board = copy.deepcopy(board)
         alt_board.handle_turn(i)
-        value = min_outcome(alt_board, depth)
+        value = min_outcome(alt_board, depth, max_value)
+
+        #pruning
+        if value >= cur_min and cur_min != None:
+            return value
 
         if value > max_value:
             max_value = value

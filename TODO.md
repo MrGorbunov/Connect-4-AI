@@ -14,7 +14,7 @@
    It would be really cool to have different evaluations
    and put them against each other.   
 - [X] Minmax Implementation
-- [ ] Alpha / Beta Pruning
+- [X] Alpha / Beta Pruning
 - [X] Integrate to work with GUI
 - [ ] Order optimization
    Figure out how to prioritize more interesting moves -

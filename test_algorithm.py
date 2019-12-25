@@ -3,9 +3,47 @@ from algorithm import *
 
 
 def __main__():
-    always_takes_win()
-    guaranteed_wins()
+    alpha_beta_pruning()
+#   always_takes_win()
+#   guaranteed_wins()
     
+
+def alpha_beta_pruning():
+    '''Runs ambiguous cases to provide different values during evaluation,
+    to see true pruning in action, you must configure algorithm.py to print info'''
+    b = Board()
+    
+    b.handle_turn(4)
+    b.handle_turn(5)
+    
+    b.handle_turn(6)
+    b.handle_turn(6)
+    
+    b.handle_turn(5)
+    b.handle_turn(3)
+
+    b.handle_turn(2)
+
+    b.printBoard()
+
+    print "2 to move, optimizing for min value"
+    print ""
+    print ""
+
+    #Board state
+    #
+    #
+    #          X O
+    #    X O X O X
+    #0 1 2 3 4 5 6
+    # O to move
+
+    move = get_best_move(b, 6)
+
+    print ""
+    print str(move) + " is considered best"
+
+
 
 def guaranteed_wins():
     '''Tests for _ 1 1 1 _ situation'''
