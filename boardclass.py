@@ -1,3 +1,5 @@
+from enum import IntEnum
+
 def array_dif (arr1, arr2):
     diff = list(arr1)
 
@@ -9,22 +11,18 @@ def array_dif (arr1, arr2):
     return diff
 
 
+class CGame(IntEnum):
+    EMPTY = 0  # No chip
+    RED = 1  # Red chip
+    YELLOW = 2  # Yellow chip
+
+    COLUMN = 6  # Spaces in a x_pos
+    ROW = 7  # Spaces in a y_pos
+
 
 class Board():
-    n = 0
-    r = 1
-    y = 2
-
     def __init__(self):
-        self.row5 = [self.n, self.n, self.n, self.n, self.n, self.n, self.n]  # empty board creation
-        self.row4 = [self.n, self.n, self.n, self.n, self.n, self.n, self.n]  # empty board creation
-        self.row3 = [self.n, self.n, self.n, self.n, self.n, self.n, self.n]  # empty board creation
-        self.row2 = [self.n, self.n, self.n, self.n, self.n, self.n, self.n]  # empty board creation
-        self.row1 = [self.n, self.n, self.n, self.n, self.n, self.n, self.n]  # empty board creation
-        self.row0 = [self.n, self.n, self.n, self.n, self.n, self.n, self.n]  # empty board creation
-
-        self.boardState = [self.row0, self.row1, self.row2, self.row3, self.row4, self.row5]
-
+        self.boardState = [[0] * CGame.ROW for y_pos in range(0, CGame.COLUMN)]
         self.turn = 0
        
         #Instead of doing a full-board sweep everytime to check for a win / connections (minmax)
@@ -197,16 +195,17 @@ class Board():
     def editBoard(self, moveNumber):
         '''Adds a piece in the column moveNumber. Returns True if successful'''
         # checks for each row in a column for empty space
-        for i in range(0, len(self.boardState)):    
-            # if the spot you want to place in is not occupied
-            if self.boardState[i][moveNumber] == self.n:
+    
+        # checks for each y_pos in a x_pos for empty space
+        for y_pos in range(0, CGame.COLUMN):  
+            # if the spot you want to place in is not occupied  
+            if self.boardState[y_pos][moveNumber] == 0:    
+            
                 if self.isCompTurn():  # if it is player 1's turn
-                    self.boardState[i][moveNumber] = self.r
+                    self.boardState[y_pos][moveNumber] = 1
                 else:  # if it is player 2's turn
-                    self.boardState[i][moveNumber] = self.y
-                return True
-
-        return False
+                    self.boardState[y_pos][moveNumber] = 2
+                break
 
     def is_winner(self):
         '''Returns whether or not there is a winner'''
@@ -237,5 +236,4 @@ class Board():
             print ""
 
         print(" 0  1  2  3  4  5  6 ")
-
 
