@@ -1,5 +1,17 @@
 from enum import IntEnum
 
+
+class CHIP(IntEnum):
+    EMPTY = 0  # No chip
+    RED = 1  # Red chip
+    YELLOW = 2  # Yellow chip
+
+
+class GAME_STATE(IntEnum):
+    COLUMN = 6  # Spaces in a x_pos
+    ROW = 7  # Spaces in a y_pos
+
+
 def array_dif (arr1, arr2):
     diff = list(arr1)
 
@@ -10,14 +22,6 @@ def array_dif (arr1, arr2):
 
     return diff
 
-
-class CGame(IntEnum):
-    EMPTY = 0  # No chip
-    RED = 1  # Red chip
-    YELLOW = 2  # Yellow chip
-
-    COLUMN = 6  # Spaces in a x_pos
-    ROW = 7  # Spaces in a y_pos
 
 
 class Board():
@@ -35,7 +39,7 @@ class Board():
         self.dead_connections = []
 
     def changeTurn(self):
-        self.turn = self.turn + 1
+        self.turn += 1
 
 
 
@@ -56,7 +60,7 @@ class Board():
 
     def empty_slots_in_col(self, col_ind):
         '''Returns the number of empty slots in column col_ind. Must be 0-6 (inclusive)'''
-        empty_slots = 6
+        empty_slots = GAME_STATE.COLUMN
 
         for row in self.boardState:
             if row[col_ind] != self.n:
