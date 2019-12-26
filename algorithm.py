@@ -37,7 +37,7 @@ def get_best_move(board, depth, debug = False):
 
     if debug:
         print "Minmaxing for the best move"
-        print "depth: {0}, cur_eval: {1}, minimizing: {2}".format(depth, static_eval(board), board.is_comp_turn())
+        print "depth: {0}, cur_eval: {1}, minimizing: {2}".format(depth, static_eval(board), not board.is_comp_turn())
 
     minimize = False
     if not board.is_comp_turn():

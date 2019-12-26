@@ -15,6 +15,7 @@
    and put them against each other.   
 - [X] Minmax Implementation
 - [X] Alpha / Beta Pruning
+    - [ ] Alpha / Beta pruning stop when a win is detected!!!
 - [X] Integrate to work with GUI
 - [ ] Order optimization
    Figure out how to prioritize more interesting moves -
@@ -28,7 +29,9 @@
 - [ ] UI / UX
 
 - [ ] Add way to restart
+- [ ] Have seperate modes between AI and user
 - [ ] Connect to Pi to take button inputs
 - [X] Display wins & winner
+- [ ] Animate AI choosing placement
 - [ ] Falling sound effect
- 
+- [ ] Do something in the case of a tie 
