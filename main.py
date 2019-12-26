@@ -81,7 +81,7 @@ screen.blit(BOARD_IMG, (0,0))
 
 
 
-#-------------------------------------- Animation & Game Globals -----------------------------
+#---------------------------------- Animation & Game Logic Globals -----------------------------
 #used to act based on current situation
 GAME_STATE = {
 	"PLAYER_MOVE": 0,
@@ -124,9 +124,14 @@ board = Board()
 cur_piece_img = PLAYER_PIECE_IMG
 cur_ghost_img = PLAYER_GHOST_IMG
 
+#THIS IS THE ONE YOU MIGHT WANT TO TOGGLE
+AGAINST_BOT = True
+BOT_DEPTH = 5
+
 #start with player
 if board.is_comp_turn():
 	board.change_turn()
+
 
 
 
@@ -183,7 +188,7 @@ def get_board_cords(px_x, px_y):
 
 
 #----------------------------- Coupled Drawing Commands ----------------------------------
-def handle_move_preview_input(new_preview_move):
+def handle_move_preview_input(new_preview_move, draw_ghost = True):
 	'''Will update visuals to match the new state. new_preview_move is automatically clamped (%= 7)'''
 	global PREVIEW_PADDING, preview_move
 
@@ -200,9 +205,11 @@ def handle_move_preview_input(new_preview_move):
 	
 	#preview piece, is above the board
 	draw_piece(get_px_cords(preview_move, -1, PREVIEW_PADDING), cur_piece_img)
-	#this check needs to happen again because it's a new column
-	ghost_height = board.empty_slots_in_col(preview_move) - 1	
-	draw_piece(get_px_cords(preview_move, ghost_height), cur_ghost_img)
+
+        if draw_ghost:
+            #this check needs to happen again because it's a new column
+            ghost_height = board.empty_slots_in_col(preview_move) - 1	
+            draw_piece(get_px_cords(preview_move, ghost_height), cur_ghost_img)
 
 
 def handle_falling_animation():
@@ -237,20 +244,31 @@ def handle_falling_animation():
 
 
 def finish_fall_animation():
-	'''Wrap the falling animation, changing game_state and redrawing what's necessary'''
-	global game_state
-	
-	game_state = GAME_STATE['PLAYER_MOVE']
+	'''Wraps up the falling animation, updates game_state and redrawing what's necessary'''
+        global game_state
+        #reset for next time	
 	fall_anim['bounce'] = 0
-	handle_move_preview_input(preview_move)
 
-	#win check
 	if board.is_winner():
 		global running
 		running = False
-	
-		for i in range(5):
-			print("We have a winner!!!")
+                print("We have a winner!!!")
+
+        if AGAINST_BOT and board.is_comp_turn():
+                print "making ai turn"
+                game_state = GAME_STATE['AI_MOVE']
+                
+                
+                #redraw
+                fall_anim['pos'] = tuple(fall_anim['pos'])
+                draw_piece(fall_anim['pos'], fall_anim['img'])
+                pygame.display.update()
+
+                make_ai_turn()
+        else:
+                game_state = GAME_STATE['PLAYER_MOVE']
+                handle_move_preview_input(preview_move)
+
 
 def set_falling_animation_parameters():
 	'''Sets all parameters relating to a falling animation. Assumes this is being called when a piece is at the top (just after preview piece)'''
@@ -304,19 +322,31 @@ def draw_winning_connection():
 def handle_move_logic():
     '''Updates the Board instance (board) and cur_images'''
     global cur_piece_img, cur_ghost_img
+    global AGAINST_BOT
 
     board.handle_turn(preview_move)
-    
+   
     if board.is_comp_turn():
             cur_piece_img = AI_PIECE_IMG
             cur_ghost_img = AI_GHOST_IMG
     else:
             cur_piece_img = PLAYER_PIECE_IMG
             cur_ghost_img = PLAYER_GHOST_IMG
-	
+    
+    #making the ai turn happens at the end of the animation
 
 
+def make_ai_turn():
+    '''Calls on the algorithm to make a move'''
+    global BOT_DEPTH, preview_move
 
+    print "make_ai_turn() called"
+    
+    ai_move = get_best_move(board, BOT_DEPTH)
+    handle_move_preview_input(ai_move) 
+
+    set_falling_animation_parameters()
+    handle_move_logic()
 
 
 
@@ -346,6 +376,9 @@ while running:
 		#doesn't listen to input, but still allows for closing the window
 		if game_state == GAME_STATE['ANIMATION']:
 			break
+
+                if game_state == GAME_STATE['AI_MOVE']:
+                        break
 		
 		
 		#something pressed

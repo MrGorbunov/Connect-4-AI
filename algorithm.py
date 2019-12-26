@@ -69,8 +69,9 @@ def get_best_move(board, depth, debug = False):
             if valuation > best_value or best_value == None:
                 best_value = valuation
                 best_move = i
-    
-    print "best_move: {0}, projected eval: {1}".format(best_move, best_value)
+   
+    if debug:
+        print "best_move: {0}, projected eval: {1}".format(best_move, best_value)
     return best_move
 
 
