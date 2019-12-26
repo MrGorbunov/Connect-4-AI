@@ -125,8 +125,8 @@ cur_piece_img = PLAYER_PIECE_IMG
 cur_ghost_img = PLAYER_GHOST_IMG
 
 #start with player
-if board.isCompTurn():
-	board.changeTurn()
+if board.is_comp_turn():
+	board.change_turn()
 
 
 
@@ -184,7 +184,7 @@ def get_board_cords(px_x, px_y):
 
 #----------------------------- Coupled Drawing Commands ----------------------------------
 def handle_move_preview_input(new_preview_move):
-	'''Will update visuals to match the new state. pos is a (px_x, px_y). new_preview_move is automatically clamped (%= 7)'''
+	'''Will update visuals to match the new state. new_preview_move is automatically clamped (%= 7)'''
 	global PREVIEW_PADDING, preview_move
 
 	#clamping for 0-6
@@ -260,7 +260,7 @@ def set_falling_animation_parameters():
 	game_state = GAME_STATE['ANIMATION']
 	
 	#set current piece
-	if board.isCompTurn():
+	if board.is_comp_turn():
 		fall_anim['img'] = AI_PIECE_IMG
 	else:
 		fall_anim['img'] = PLAYER_PIECE_IMG
@@ -306,9 +306,8 @@ def handle_move_logic():
     global cur_piece_img, cur_ghost_img
 
     board.handle_turn(preview_move)
-    print "eval: " + str(static_eval(board))
     
-    if board.isCompTurn():
+    if board.is_comp_turn():
             cur_piece_img = AI_PIECE_IMG
             cur_ghost_img = AI_GHOST_IMG
     else:
@@ -328,6 +327,9 @@ def handle_move_logic():
 #draw the important stuff just once, then the screen gets selectively updated
 screen.blit(BG_IMG, (0,0))
 screen.blit(BOARD_IMG, (0,0))
+
+handle_move_preview_input(preview_move)
+
 pygame.display.update()
 
 

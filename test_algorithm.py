@@ -3,9 +3,9 @@ from algorithm import *
 
 
 def __main__():
-    alpha_beta_pruning()
-#   always_takes_win()
-#   guaranteed_wins()
+#   alpha_beta_pruning()
+    always_takes_win()
+    guaranteed_wins()
     
 
 def alpha_beta_pruning():
@@ -24,7 +24,7 @@ def alpha_beta_pruning():
 
     b.handle_turn(2)
 
-    b.printBoard()
+    b.print_board()
 
     print "2 to move, optimizing for min value"
     print ""
@@ -77,10 +77,10 @@ def guaranteed_wins():
     #should now be a winner
 
     if b.is_winner() == False: 
-        b.printBoard()
-        print "failed to win 100% win situation"
+        b.print_board()
+        print "Failed to win 100% win situation"
     else:
-        print "correctly looked two turns ahead"
+        print "Correctly looked two turns ahead"
     
 
 
@@ -109,7 +109,7 @@ def always_takes_win():
     best_move = get_best_move(b, 1)
 
     if best_move != 0:
-        b.printBoard()
+        b.print_board()
         print "{0} considered best move, should be 0".format(best_move)
     else:
         print "Correctly picked win. Move {0} is move 0".format(best_move)
@@ -139,7 +139,7 @@ def always_takes_win():
     best_move = get_best_move(b, 1)
 
     if best_move != 0:
-        b.printBoard()
+        b.print_board()
         print "{0} considered best move, should be 0".format(best_move)
     else:
         print "Correctly picked win. Move {0} is move 0".format(best_move)
