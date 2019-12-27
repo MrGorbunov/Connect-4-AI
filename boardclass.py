@@ -1,15 +1,9 @@
-from enum import IntEnum
-
-
-class CHIP(IntEnum):
-    EMPTY = 0  # No chip
-    RED = 1  # Red chip
-    YELLOW = 2  # Yellow chip
-
-
-class GAME_STATE(IntEnum):
-    COLUMN = 6  # Spaces in a x_pos
-    ROW = 7  # Spaces in a y_pos
+PIECE = {
+    "YEL": 2,
+    "RED": 1,
+    "AIR": 0,
+    "WALL": 3
+}
 
 
 def array_dif (arr1, arr2):
@@ -24,9 +18,19 @@ def array_dif (arr1, arr2):
 
 
 
+#
+# actual class
+#
+
 class Board():
     def __init__(self):
-        self.boardState = [[0] * CGame.ROW for y_pos in range(0, CGame.COLUMN)]
+        self.board_state = []
+
+        for i in range(6):
+            self.board_state += [[]]
+            for j in range(7):
+                self.board_state[i] += [PIECE['AIR']]
+
         self.turn = 0
        
         #Instead of doing a full-board sweep everytime to check for a win / connections (minmax)
@@ -38,19 +42,19 @@ class Board():
         #When a connection is surrounded on both ends by an opposing color, it becomes _ead
         self.dead_connections = []
 
-    def changeTurn(self):
-        self.turn += 1
 
+    def change_turn(self):
+        self.turn += 1
 
 
     def handle_turn(self, move_ind, print_to_console = False):
         '''Calls everything necessary to process one turn, returns True if valid move'''
-        if self.editBoard(move_ind):
+        if self.edit_board(move_ind):
             self.update_connections([move_ind, 5 - self.empty_slots_in_col(move_ind)])
-            self.changeTurn()
+            self.change_turn()
 
             if print_to_console:
-                self.printBoard()
+                self.print_board()
 
             return True
 
@@ -62,8 +66,8 @@ class Board():
         '''Returns the number of empty slots in column col_ind. Must be 0-6 (inclusive)'''
         empty_slots = GAME_STATE.COLUMN
 
-        for row in self.boardState:
-            if row[col_ind] != self.n:
+        for row in self.board_state:
+            if row[col_ind] != PIECE['AIR']:
                 empty_slots -= 1
 
         return empty_slots
@@ -81,11 +85,11 @@ class Board():
 
             if (cur_cord[0] < 0 or cur_cord[0] > 6 or
                 cur_cord[1] < 0 or cur_cord[1] > 5):
-                cur_val = 3
+                cur_val = PIECE['WALL']
                 break
 
 
-            cur_val = self.boardState[cur_cord[1]][cur_cord[0]]
+            cur_val = self.board_state[cur_cord[1]][cur_cord[0]]
 
             if cur_val != piece_value:
                 break
@@ -99,12 +103,12 @@ class Board():
 
     def update_connections(self, piece_cord):
         '''Will check for new connections at piece_cord and update internal connection list'''
-        piece_value = self.boardState[piece_cord[1]][piece_cord[0]]
+        piece_value = self.board_state[piece_cord[1]][piece_cord[0]]
    
         #have this handy
-        other_piece = 1
-        if piece_value == 1:
-            other_piece = 2
+        other_piece = PIECE['YEL']
+        if piece_value == PIECE['YEL']:
+            other_piece = PIECE['RED']
         
         center_cord = piece_cord
         dirs = [[0,1], [1,1], [1,0], [-1,1]]
@@ -112,15 +116,16 @@ class Board():
         for direc in dirs:
             alt_direc = [direc[0] * -1, direc[1] * -1]
             
+            #this gather a connection going in bothe directions
             connection = self.iterate_along(center_cord, direc, piece_value)
             other_con = self.iterate_along(center_cord, alt_direc, piece_value)
             true_con = [piece_value] + connection[1:] + other_con[2:]
 
-            #we don't care about length-1 "connection" i.e. solo pieces
+            #we don't care about length 1 "connection" i.e. solo pieces
             if len(true_con) > 2:
-                winning_con = len(true_con) >= 5
-                free_one_side = connection[0] == 0
-                free_other_side = other_con[0] == 0
+                winning_con =      len(true_con) >= 5
+                free_one_side =    connection[0] == 0
+                free_other_side =  other_con[0] == 0
                 
                 if free_one_side or free_other_side or winning_con:
                     self.add_to_connections(true_con)
@@ -131,12 +136,13 @@ class Board():
                      
 
             #check for having blocked the other piece
+            #connection[0] indicates what's at the end of the chain
             if len(connection) <= 2:
-                if connection[0] != 3 and connection[0] != 0:
+                if connection[0] != PIECE['WALL'] and connection[0] != PIECE['AIR']:
                     self.check_for_blocking(center_cord, direc, other_piece)
             
             if len(other_con) <= 2:
-                if other_con[0] != 3 and other_con[0] != 0:
+                if other_con[0] != PIECE['WALL'] and other_con[0] != PIECE['AIR']:
                     self.check_for_blocking(center_cord, alt_direc, other_piece)
 
 
@@ -146,7 +152,7 @@ class Board():
         offset_cord = [center[0] + direction[0], center[1] + direction[1]]
         enemy_chain = self.iterate_along(offset_cord, direction, other_piece)
 
-        if enemy_chain[0] != 0:
+        if enemy_chain[0] != PIECE['AIR']:
             #just got blocked off
             self.add_dead_connection([other_piece] + enemy_chain[1:])
 
@@ -190,26 +196,28 @@ class Board():
             return
        
         #possible that this was X _ X => X X X
+        #hence why adding even if no previous connection was found
         self.connections += [connection]
 
      
-    def isCompTurn(self):
+    def is_comp_turn(self):
         return self.turn % 2 == 0
 
-    def editBoard(self, moveNumber):
-        '''Adds a piece in the column moveNumber. Returns True if successful'''
-        # checks for each row in a column for empty space
-    
-        # checks for each y_pos in a x_pos for empty space
-        for y_pos in range(0, CGame.COLUMN):  
-            # if the spot you want to place in is not occupied  
-            if self.boardState[y_pos][moveNumber] == 0:    
+
+    def edit_board(self, move_number):
+        '''Adds a piece in the column move_number. Returns True if successful'''
+        for i in range(0, len(self.board_state)):    
+            if self.board_state[i][move_number] == PIECE['AIR']:
             
-                if self.isCompTurn():  # if it is player 1's turn
-                    self.boardState[y_pos][moveNumber] = 1
-                else:  # if it is player 2's turn
-                    self.boardState[y_pos][moveNumber] = 2
-                break
+                if self.is_comp_turn():  
+                    self.board_state[i][move_number] = PIECE['RED']
+                else:  
+                    self.board_state[i][move_number] = PIECE['YEL']
+               
+                return True
+
+        return False
+
 
     def is_winner(self):
         '''Returns whether or not there is a winner'''
@@ -219,8 +227,10 @@ class Board():
 
         return False
 
+
     def get_winning_connection(self):
-        '''Returns the winning connection [1, cord, ...] if there is a winner, otherwise []'''
+        '''Returns the winning connection [1, cord, ...] if there is a winner,
+        otherwise returns []'''
         for con in self.connections:
             if len(con) >= 5:
                 return con
@@ -228,9 +238,9 @@ class Board():
         return []
 
 
-    def printBoard(self):
+    def print_board(self):
         for row_ind in range(5, -1, -1):
-            row = self.boardState[row_ind]
+            row = self.board_state[row_ind]
 
             for piece in row:
                 if piece == 0:
