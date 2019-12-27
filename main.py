@@ -90,10 +90,7 @@ def make_ai_turn():
     '''Calls on the algorithm to make a move, then sets animations into progress'''
     global preview_move, game_state, anim_state
 
-    print "calculating best move"
     best_move = get_best_move(board, BOT_DEPTH)
-    print "found: {0}".format(best_move)
-    print ""
    
     #animation
     game_state = GAME_STATE['ANIMATION']
