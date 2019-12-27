@@ -3,7 +3,7 @@
 
 ---
 
-- [ ] Min Max Algorithim
+## - [ ] Min Max Algorithim
 
 - [X] Rework board class to track connections
    This will save a lot of compute time because
@@ -26,12 +26,16 @@
 
 ---
 
-- [ ] UI / UX
+## - [ ] UI / UX
 
 - [ ] Add way to restart
-- [ ] Have seperate modes between AI and user
+- [X] Have seperate modes between AI and user
 - [ ] Connect to Pi to take button inputs
 - [X] Display wins & winner
-- [ ] Animate AI choosing placement
-- [ ] Falling sound effect
+- [X] Animate AI choosing placement
+- [X] Falling sound effect
 - [ ] Do something in the case of a tie 
+- [ ] Minor Cleanups
+    - [X] Don't draw preview piece on top row
+    - [ ] Make AI move piece around during thinking time,
+       not just during animation at end

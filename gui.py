@@ -1,7 +1,8 @@
 import pygame
+from pygame import mixer
 
+mixer.pre_init(44100, -16, 1, 512)
 pygame.init()
-
 
 #window info
 SCALE_FACTOR = 6
@@ -26,6 +27,18 @@ INPUT_TYPE = {
 	"RIGHT": pygame.K_RIGHT,
 	"SELECT": pygame.K_DOWN
 }
+
+
+
+
+
+#------------------------------ SFX / MUSIC ----------------------
+#currently no music
+hit_sound = mixer.Sound("snd/hit.wav")
+quiet_hit_sound = mixer.Sound("snd/hit_quiet.wav")
+
+
+
 
 
 #--------------------------------- IMAGES -------------------------
@@ -79,21 +92,8 @@ screen.blit(BOARD_IMG, (0,0))
 FPS = 60
 preview_move = 0
 
-GRAVITY = 20 * SCALE_FACTOR
-NUM_BOUNCES = 2
-BOUNCE_COEF = -0.3
-fall_anim = {
-	"pos": (0, 0),
-	"dest": (0, 0),
-	"y_vel": 0,
-	"Y_ACCEL": GRAVITY * (1.0 / FPS),
-	"bounce": 0,
-	"img": PLAYER_PIECE_IMG,
-}
-
 cur_piece_img = PLAYER_PIECE_IMG
 cur_ghost_img = PLAYER_GHOST_IMG
-
 
 
 
@@ -178,7 +178,8 @@ def draw_new_preview(new_preview_move, board, draw_ghost = True):
 	
 	#clear the current ghost and preview piece
 	ghost_height = board.empty_slots_in_col(preview_move) - 1
-	clear_piece(get_px_cords(preview_move, ghost_height))
+        if ghost_height > -1:
+            clear_piece(get_px_cords(preview_move, ghost_height))
 	clear_piece(get_px_cords(preview_move, -1, PREVIEW_PADDING))
 	
 	#draw new preview piece
@@ -188,68 +189,8 @@ def draw_new_preview(new_preview_move, board, draw_ghost = True):
         if draw_ghost:
             #this check needs to happen again because it's a new column
             ghost_height = board.empty_slots_in_col(preview_move) - 1	
-            draw_piece(get_px_cords(preview_move, ghost_height), cur_ghost_img)
-
-
-def handle_falling_animation():
-	'''Will draw and update values relating to a falling piece'''
-	global fall_anim
-	
-	clear_piece(tuple(fall_anim['pos']))
-	fall_anim['pos'] = list(fall_anim['pos'])
-	
-        fall_anim['y_vel'] += fall_anim['Y_ACCEL']
-	fall_anim['pos'][1] += fall_anim['y_vel']
-	
-	#check if it has reached the target y yet
-	if fall_anim['dest'][1] <= fall_anim['pos'][1]:
-		#this way it isn't below the line
-		fall_anim['pos'][1] = fall_anim['dest'][1]
-	
-		#bouncing behaviour
-		if fall_anim['bounce'] + 1 >= NUM_BOUNCES:
-			finish_fall_animation()
-
-                        #redraw
-                        fall_anim['pos'] = tuple(fall_anim['pos'])
-                        draw_piece(fall_anim['pos'], fall_anim['img'])
-
-                        return True
-		else:
-			fall_anim['bounce'] += 1
-			#reverse dir and lose some speed
-			fall_anim['y_vel'] *= BOUNCE_COEF
-
-        #redraw
-        fall_anim['pos'] = tuple(fall_anim['pos'])
-        draw_piece(fall_anim['pos'], fall_anim['img'])
-
-        return False
-		
-
-
-def finish_fall_animation():
-	'''Wraps up the falling animation, redrawing what's necessary'''
-        #reset for next time	
-	fall_anim['bounce'] = 0
-
-
-def set_falling_animation_parameters(board):
-	'''Sets all parameters relating to a falling animation. Assumes this is being called when a piece is at the top (just after preview piece)'''
-	global fall_anim
-
-        #with each call, it will switch
-        fall_anim['img'] = cur_piece_img
-	fall_anim['pos'] = get_px_cords(preview_move, -1, PREVIEW_PADDING)
-	fall_anim['y_vel'] = 0
-	
-	#set to just be the bottom of the board
-	fall_anim['dest'] = get_px_cords(preview_move, board.empty_slots_in_col(preview_move) - 1)
-
-
-
-
-
+            if ghost_height > -1:   
+                 draw_piece(get_px_cords(preview_move, ghost_height), cur_ghost_img)
 
 
 def draw_winning_connection(board):
@@ -276,6 +217,154 @@ def draw_winning_connection(board):
     for cord in winner:
         cur_cord = get_px_cords(cord[0], 5 - cord[1]) 
         draw_piece_over(cur_cord, cross_img) 
+
+
+
+
+#--------------------------------- AI Choosing Animation ---------------------
+#Moves the preview piece back and forth so it looks like a choice is being made
+FRAMES_PER_MOVE = 15 #so it's not instant side to side
+choose_anim = {
+        "dest": 0,
+        "dir": 1,
+        "frame": 0
+}
+
+
+def set_choose_animation_parameters(destination):
+    '''Sets all parameters relating to the choosing animation'''
+    global choose_anim
+
+    choose_anim['dest'] = destination
+    
+    choose_anim['dir'] = 1
+    if destination - preview_move < 0:
+        choose_anim['dir'] = -1
+    elif destination - preview_move == 0:
+        choose_anim['dir'] = 0
+    
+    choose_anim['frame'] = 0
+
+
+def handle_choose_animation():
+    '''Moves one frame forward in the choosing animation'''
+    global choose_anim
+    choose_anim['frame'] += 1
+
+    if choose_anim['frame'] >= FRAMES_PER_MOVE:
+        global preview_move
+        choose_anim['frame'] = 0
+        
+        if preview_move == choose_anim['dest']:
+            finish_choose_animation()
+            return True
+        
+        #this will look very similar to draw_new_preview(..)
+        clear_piece(get_px_cords(preview_move, -1, PREVIEW_PADDING))
+        preview_move += choose_anim['dir']
+        preview_move %= 7
+        draw_piece(get_px_cords(preview_move, -1, PREVIEW_PADDING), cur_piece_img)
+       
+
+    return False
+
+
+
+def finish_choose_animation():
+    '''Resets choose_anim parameters for next time'''
+    #all params (A/O now) are set with set_choose_animation()
+    pass
+
+
+
+
+
+#--------------------------------- Falling Animation ----------------------------
+GRAVITY = 20 * SCALE_FACTOR
+NUM_BOUNCES = 2
+BOUNCE_COEF = -0.3
+fall_anim = {
+	"pos": (0, 0),
+	"dest": (0, 0),
+	"y_vel": 0,
+	"Y_ACCEL": GRAVITY * (1.0 / FPS),
+	"bounce": 0,
+	"img": PLAYER_PIECE_IMG,
+}
+
+
+
+def set_falling_animation_parameters(board):
+	global fall_anim
+
+        #with each call, it will switch
+        fall_anim['img'] = cur_piece_img
+	fall_anim['pos'] = get_px_cords(preview_move, -1, PREVIEW_PADDING)
+	fall_anim['y_vel'] = 0
+	
+	#set to just be the bottom of the board
+	fall_anim['dest'] = get_px_cords(preview_move, board.empty_slots_in_col(preview_move) - 1)
+
+
+
+def handle_falling_animation():
+	'''Will draw and update values relating to a falling piece'''
+	global fall_anim
+	
+	clear_piece(tuple(fall_anim['pos']))
+	fall_anim['pos'] = list(fall_anim['pos'])
+	
+        fall_anim['y_vel'] += fall_anim['Y_ACCEL']
+	fall_anim['pos'][1] += fall_anim['y_vel']
+	
+	#check if it has reached the target y yet
+	if fall_anim['dest'][1] <= fall_anim['pos'][1]:
+		#this way it isn't below the line
+		fall_anim['pos'][1] = fall_anim['dest'][1]
+
+                #sound playing
+                if fall_anim['bounce'] == 0:
+                    hit_sound.play()
+                else:
+                    quiet_hit_sound.play()
+
+		#bouncing behaviour
+		if fall_anim['bounce'] + 1 >= NUM_BOUNCES:
+			finish_falling_animation()
+
+                        #redraw
+                        fall_anim['pos'] = tuple(fall_anim['pos'])
+                        draw_piece(fall_anim['pos'], fall_anim['img'])
+
+                        return True 
+		
+
+                fall_anim['bounce'] += 1
+                #reverse dir and lose some speed
+                fall_anim['y_vel'] *= BOUNCE_COEF
+
+
+        #redraw
+        fall_anim['pos'] = tuple(fall_anim['pos'])
+        draw_piece(fall_anim['pos'], fall_anim['img'])
+
+        return False
+		
+
+
+def finish_falling_animation():
+	'''Wraps up the falling animation, redrawing what's necessary'''
+        #reset for next time	
+	fall_anim['bounce'] = 0
+
+
+
+
+
+
+
+
+
 
 
 
