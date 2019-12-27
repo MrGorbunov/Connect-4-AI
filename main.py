@@ -5,7 +5,7 @@ Connect 4 AI
 
 from boardclass import Board
 from algorithm import get_best_move
-from gui import *
+from display import *
 
 
 #---------------------------------- Game Logic Globals -----------------------------
@@ -13,26 +13,35 @@ from gui import *
 GAME_STATE = {
 	"PLAYER_MOVE": 0,
 	"AI_MOVE": 1,
-	"ANIMATION": 2
+	"ANIMATION": 2,
+        "END_SCREEN": 3
 }
 
 ANIM_STATE = {
         "NONE": 0,
         "FALLING": 1,
-        "CHOOSE": 2
+        "CHOOSE": 2,
+        "GUI_DROPIN": 3,
+        "SCREEN_RESET": 4
+}
+
+END_SCREEN_STATE = {
+        "RESTART": 0,
+        "QUIT": 1
 }
 
 
-#we import a dictionary for key presses from animation (it uses pygame enums)
+#because pygame enums are referenced, EVENT_TYPE and INPUT_TYPE are imported
 
 #current state
 game_state = GAME_STATE['PLAYER_MOVE']
-anim_state = ANIM_STATE['NONE']
 preview_move = 0
-
 AGAINST_BOT = True
-BOT_DEPTH = 6
+BOT_DEPTH = 1
 
+anim_state = ANIM_STATE['NONE']
+
+end_screen_state = END_SCREEN_STATE['RESTART']
 
 
 board = Board()
@@ -102,68 +111,137 @@ def make_ai_turn():
 
 
 
+#----------------------------------- End Game Screen -----------------------------------
+
+
+
+
 
 
 #------------------------------------- Main Loop ---------------------------------------
 #this way the preivew move is there at the start
 draw_new_preview(preview_move, board)
-
-
-#main game loop
 running = True
-while running:
-	#------------------ check events -----------
-	for event in get_events():
-		if event.type == EVENT_TYPE['QUIT']:
-			running = False
-			break
-		
-		
-		#doesn't listen to input, but still allows for closing the window
-		if game_state == GAME_STATE['ANIMATION']:
-			break
-	
-                if game_state == GAME_STATE['AI_MOVE']:
+
+def game_loop():
+    '''The main game_loop'''
+    #main game loop
+    global preview_move, board, running
+
+    while running:
+            #------------------ check events -----------
+            for event in get_events():
+                    if event.type == EVENT_TYPE['QUIT']:
+                            running = False
+                            break
+                    
+                    
+                    #doesn't listen to input, but still allows for closing the window
+                    if game_state == GAME_STATE['ANIMATION']:
+                            break
+            
+                    if game_state == GAME_STATE['AI_MOVE']:
+                            break
+
+                    
+                    #something pressed
+                    if event.type == EVENT_TYPE['KEYDOWN']:
+                            if event.key == INPUT_TYPE['LEFT']:
+                                    preview_move -= 1
+                                    draw_new_preview(preview_move, board)
+                                    
+                            elif event.key == INPUT_TYPE['RIGHT']:
+                                    preview_move += 1
+                                    draw_new_preview(preview_move, board)
+
+                            elif event.key == INPUT_TYPE['SELECT']:
+                                    handle_move_logic()
+                                    break
+            
+
+
+            #------------- GAME STATE ---------------
+            if game_state == GAME_STATE['AI_MOVE']:
+                    #AI has yet to make up its mind
+                    make_ai_turn()
+
+
+            #update based on game_state
+            elif game_state == GAME_STATE['ANIMATION']:
+                    if anim_state == ANIM_STATE['FALLING']:
+                        #animations return True when they're done
+                        if handle_falling_animation():
+                            reset_turn()
+
+                    elif anim_state == ANIM_STATE['CHOOSE']:
+                        if handle_choose_animation():
+                            #this sets it up for the falling animation
+                            handle_move_logic()
+
+            game_tick()	
+
+
+
+
+def gui_loop():
+    '''Handles the GUI pop up'''
+    global running, board
+
+    #if the player x-ed out of the game
+    if not running:
+        return
+    
+    #assumed that coming in, the game just finished
+    #still need to draw up GUI
+    game_state = GAME_STATE['ANIMATION']
+    anim_state = ANIM_STATE['GUI_DROPIN']
+    set_gui_dropin_parameters()
+
+
+    while running:
+        #------------------ check events -----------
+        for event in get_events():
+                if event.type == EVENT_TYPE['QUIT']:
+                        running = False
                         break
-
-		
-		#something pressed
-		if event.type == EVENT_TYPE['KEYDOWN']:
-			if event.key == INPUT_TYPE['LEFT']:
-                                preview_move -= 1
-				draw_new_preview(preview_move, board)
-				
-			elif event.key == INPUT_TYPE['RIGHT']:
-                                preview_move += 1
-				draw_new_preview(preview_move, board)
-
-			elif event.key == INPUT_TYPE['SELECT']:
-				handle_move_logic()
-				break
-	
+                
+                #doesn't listen to input, but still allows for closing the window
+                if event.type == EVENT_TYPE['KEYDOWN']:
+                        if event.key == INPUT_TYPE['LEFT']:
+                            pass                 
+                        elif event.key == INPUT_TYPE['RIGHT']:
+                            pass
+                        elif event.key == INPUT_TYPE['SELECT']:
+                            pass 
 
 
         #------------- GAME STATE ---------------
-        if game_state == GAME_STATE['AI_MOVE']:
-                #AI has yet to make up its mind
-                make_ai_turn()
-
-
-	#update based on game_state
-	if game_state == GAME_STATE['ANIMATION']:
-                if anim_state == ANIM_STATE['FALLING']:
+        #update based on game_state
+        if game_state == GAME_STATE['ANIMATION']:
+                if anim_state == ANIM_STATE['GUI_DROPIN']:
                     #animations return True when they're done
-                    if handle_falling_animation():
-                        reset_turn()
+                    if handle_gui_dropin_animation():
+                        game_state = GAME_STATE['END_SCREEN']
 
-                elif anim_state == ANIM_STATE['CHOOSE']:
-                    if handle_choose_animation():
-                        #this sets it up for the falling animation
-                        handle_move_logic()
-
-        game_tick()	
+        elif game_state == GAME_STATE['END_SCREEN']:
+            pass
 
 
-#this way there's a delay and you can admire the victory
-game_tick()
+
+
+def __main__():
+    '''Puts the game loop together with the actual gui display'''
+#   while running:
+#       game_loop()
+
+#       if running:
+#           gui_loop()
+    draw_endscreen(1)
+    game_tick()
+        
+
+
+
+
+__main__()
 asd = input()

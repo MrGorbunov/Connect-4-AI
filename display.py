@@ -16,20 +16,6 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 clock = pygame.time.Clock()
 
 
-#used by main.py, which does not import pygame
-EVENT_TYPE = {
-        "QUIT": pygame.QUIT,
-        "KEYDOWN": pygame.KEYDOWN
-}
-
-INPUT_TYPE = {
-	"LEFT": pygame.K_LEFT,
-	"RIGHT": pygame.K_RIGHT,
-	"SELECT": pygame.K_DOWN
-}
-
-
-
 
 
 #------------------------------ SFX / MUSIC ----------------------
@@ -40,19 +26,18 @@ quiet_hit_sound = mixer.Sound("snd/hit_quiet.wav")
 
 
 
-
-#--------------------------------- IMAGES -------------------------
-#loading all images
-BG_IMG    = pygame.image.load("img/wall.png")
-BOARD_IMG = pygame.image.load("img/gameboard.png")
-
-
+#----------------------------- GAME IMAGES --------------------------------
 #these come from the image, representing the x,y of the top left of the gameboard
 BOARD_X = 22 * SCALE_FACTOR
 BOARD_Y = 21 * SCALE_FACTOR
 CHIP_SIZE = 16 * SCALE_FACTOR
 #distance (px) between the top of the board and the preview piece
 PREVIEW_PADDING = -3 * SCALE_FACTOR
+
+
+#load images
+BG_IMG    = pygame.image.load("img/wall.png")
+BOARD_IMG = pygame.image.load("img/gameboard.png")
 
 PLAYER_GHOST_IMG = pygame.image.load("img/piece/ghost_red_piece.png")
 PLAYER_PIECE_IMG = pygame.image.load("img/piece/red_piece.png")
@@ -73,27 +58,60 @@ PLAYER_GHOST_IMG = pygame.transform.scale(PLAYER_GHOST_IMG, (CHIP_SIZE, CHIP_SIZ
 AI_PIECE_IMG     = pygame.transform.scale(AI_PIECE_IMG,  (CHIP_SIZE, CHIP_SIZE))
 AI_GHOST_IMG     = pygame.transform.scale(AI_GHOST_IMG, (CHIP_SIZE, CHIP_SIZE))
 
-#cross images
 CROSS_HORIZ = pygame.transform.scale(CROSS_HORIZ, (CHIP_SIZE, CHIP_SIZE))
 CROSS_VERT  = pygame.transform.scale(CROSS_VERT, (CHIP_SIZE, CHIP_SIZE))
 CROSS_NW    = pygame.transform.scale(CROSS_NW, (CHIP_SIZE, CHIP_SIZE))
 CROSS_NE    = pygame.transform.scale(CROSS_NE, (CHIP_SIZE, CHIP_SIZE))
 
 
+
+
+#--------------------------- GUI Images -----------------------
+#These magic numbers come right from the files
+BUTTON_SIZE = (36 * SCALE_FACTOR, 34 * SCALE_FACTOR)
+BUT_RESTART_POS = (29 * SCALE_FACTOR, 49 * SCALE_FACTOR)
+BUT_QUIT_POS = (89 * SCALE_FACTOR , 49 * SCALE_FACTOR)
+
+#load up these bad bois
+RESTART_IN_IMG  = pygame.image.load("img/gui/restart_in.png")
+RESTART_OUT_IMG = pygame.image.load("img/gui/restart_out.png")
+QUIT_IN_IMG     = pygame.image.load("img/gui/quit_in.png")
+QUIT_OUT_IMG    = pygame.image.load("img/gui/quit_out.png")
+
+#scale these bad bois up
+RESTART_IN_IMG  = pygame.transform.scale(RESTART_IN_IMG, BUTTON_SIZE)
+RESTART_OUT_IMG = pygame.transform.scale(RESTART_OUT_IMG, BUTTON_SIZE)
+QUIT_IN_IMG     = pygame.transform.scale(QUIT_IN_IMG, BUTTON_SIZE)
+QUIT_OUT_IMG    = pygame.transform.scale(QUIT_OUT_IMG, BUTTON_SIZE)
+
+
+
+
+
+
+#--------------------------- Globals ------------------------------
 #draw BG => then later it just gets overwritten in specific places
 screen.blit(BG_IMG, (0,0))
 screen.blit(BOARD_IMG, (0,0))
 
-
-
-
-
-#which row the current move is planned to be in
 FPS = 60
-preview_move = 0
 
-cur_piece_img = PLAYER_PIECE_IMG
-cur_ghost_img = PLAYER_GHOST_IMG
+#used by main.py, which does not import pygame
+EVENT_TYPE = {
+        "QUIT": pygame.QUIT,
+        "KEYDOWN": pygame.KEYDOWN
+}
+
+INPUT_TYPE = {
+	"LEFT": pygame.K_LEFT,
+	"RIGHT": pygame.K_RIGHT,
+	"SELECT": pygame.K_DOWN
+}
+
+
+
+
+
 
 
 
@@ -113,11 +131,11 @@ def get_events():
 
 #--------------------------- Basic Drawing Functions ---------------------------------
 #all x,y are in pixel space
-def draw_piece_over(pos, img):
+def draw_piece_over(pos, img, img_area = (CHIP_SIZE, CHIP_SIZE)):
     '''Draws img at pos without clearing it. Assumes img is CHIP_SIZE x CHIP_SIZE'''
     global screen
 
-    board_area = pos + (CHIP_SIZE, CHIP_SIZE)
+    board_area = pos + img_area
     screen.blit(img, pos)
 
 
@@ -152,8 +170,20 @@ def get_px_cords(x, y, y_px_offset = 0):
 
 def get_board_cords(px_x, px_y):
 	'''Converts pixel cords to game board cords. Will return negatives'''
+        #// 1 is a floor operator (integer division)
 	return ((px_x - BOARD_X) / CHIP_SIZE // 1, 
 			(px_y - BOARD_Y) / CHIP_SIZE // 1)
+
+
+
+
+#-------------------- Game-Related Drawing Commands -----------------------
+preview_move = 0
+
+cur_piece_img = PLAYER_PIECE_IMG
+cur_ghost_img = PLAYER_GHOST_IMG
+
+
 
 def switch_color():
         '''Swaps the current image to be the other image'''
@@ -166,9 +196,6 @@ def switch_color():
             cur_ghost_img = PLAYER_GHOST_IMG
 
 
-
-
-#----------------------------- Coupled Drawing Commands ----------------------------------
 def draw_new_preview(new_preview_move, board, draw_ghost = True):
 	'''Will update visuals to match the new state. new_preview_move is automatically clamped (%= 7)'''
 	global PREVIEW_PADDING, preview_move
@@ -217,6 +244,77 @@ def draw_winning_connection(board):
     for cord in winner:
         cur_cord = get_px_cords(cord[0], 5 - cord[1]) 
         draw_piece_over(cur_cord, cross_img) 
+
+
+
+
+#------------------------- GUI Drawing Commands --------------------------
+def draw_endscreen(new_selection):
+    '''Draws/updates the endscreen gui to match the new selection'''
+    new_selection %= 2
+    
+    #making the selected image different 
+    res_img = RESTART_OUT_IMG
+    quit_img = QUIT_OUT_IMG
+
+    if new_selection == 0:
+        res_img = RESTART_IN_IMG
+    elif new_selection == 1:
+        quit_img = QUIT_IN_IMG
+   
+
+    #now lets draw these mfs
+    draw_piece_over(BUT_RESTART_POS, res_img, BUTTON_SIZE)
+    draw_piece_over(BUT_QUIT_POS, quit_img, BUTTON_SIZE)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#-------------------------------------------------------------------------
+#                                Animations
+#-------------------------------------------------------------------------
+
+
+
+#--------------------------------- GUI Drop-In Animation  ---------------------
+SPEED = FPS // 2 #frames for whole animation
+#path is fast drop
+#over shoot by a little
+#come back to rest
+dropin_anim = {
+        "over_shoot": 5 * SCALE_FACTOR,
+        "cur_pos": 0
+}
+
+
+def set_dropin_animation_parameters(destination):
+    '''Sets all parameters relating to the gui dropin animation'''
+    pass
+
+def handle_dropin_animation():
+    '''Moves one frame forward in the gui dropin animation'''
+    return False
+
+
+
+def finish_dropin_animation():
+    '''Resets gui dropin parameters for next time'''
+    #all params (A/O now) are set with set_choose_animation()
+    #so none need to be reset
+    pass
 
 
 
@@ -273,6 +371,7 @@ def handle_choose_animation():
 def finish_choose_animation():
     '''Resets choose_anim parameters for next time'''
     #all params (A/O now) are set with set_choose_animation()
+    #so none need to be reset
     pass
 
 

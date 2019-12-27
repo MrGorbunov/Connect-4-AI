@@ -23,7 +23,7 @@ def static_eval(board):
             board_eval += multiplier * 4
         elif length == 3:
             board_eval += multiplier * 9
-        elif length == 4:
+        elif length >= 4:
             return multiplier * 1000
     
     return board_eval
