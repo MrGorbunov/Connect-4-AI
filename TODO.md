@@ -28,21 +28,21 @@
 
 ## - [ ] UI / UX
 
-- [ ] GUI for end\_screen
-    - [ ] Display restart / tie text
-    - [ ] Also for ties
-    - [ ] Maybe have seperate pvp vs pve mode
-    - [ ] Settings button during the game
-    - [ ] Different difficulties
+~~- [ ] GUI for end\_screen
+~~    - [ ] Display restart / tie text
+    - [X] Also for ties
+~~    - [ ] Maybe have seperate pvp vs pve mode
+~~    - [ ] Settings button during the game
+~~    - [ ] Different difficulties
 - [X] Have seperate modes between AI and user
 ~~- [ ] Connect to Pi to take button inputs~~
 - [X] Display wins & winner
 - [X] Animate AI choosing placement
 - [X] Falling sound effect
-- [ ] Play Sound for victory / loss
-- [ ] Minor Cleanups
+- [X] Play Sound for victory / loss
+~~- [ ] Minor Cleanups
     - [X] Don't draw preview piece on top row
-    - [ ] Make AI move piece around during thinking time,
+~~    - [ ] Make AI move piece around during thinking time,
        not just during animation at end
-    - [ ] Diagnol connections, when drawn, are disconnected.
+~~    - [ ] Diagnol connections, when drawn, are disconnected.
        add the little connectors to make them continous

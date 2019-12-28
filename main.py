@@ -36,8 +36,8 @@ GUI_STATE = {
 #current state
 game_state = GAME_STATE['ANIMATION']
 preview_move = 0
-AGAINST_BOT = False
-BOT_DEPTH = 1
+AGAINST_BOT = True
+BOT_DEPTH = 6
 
 anim_state = ANIM_STATE['SCREEN_RESET']
 
@@ -82,6 +82,18 @@ def reset_turn():
     #check for win
     if board.is_winner():
         draw_winning_connection(board)
+
+        if board.get_winning_connection()[0] == 2:
+            play_victory_sound()
+        else:
+            play_gameover_sound()
+
+
+        game_state = GAME_STATE['END_SCREEN']
+        return
+
+    elif board.is_tie():
+        play_gameover_sound()
         game_state = GAME_STATE['END_SCREEN']
         return
 
@@ -242,10 +254,7 @@ def gui_loop():
     #still need to draw up GUI
     game_state = GAME_STATE['ANIMATION']
     anim_state = ANIM_STATE['GUI_DROPIN']
-    set_dropin_animation_parameters()
-    
-    #for now, this is here
-    draw_endscreen(gui_state)
+    set_dropin_animation_parameters(board)
 
     while running:
         #------------------ check events -----------
@@ -282,7 +291,8 @@ def gui_loop():
                 if anim_state == ANIM_STATE['GUI_DROPIN']:
                     #animations return True when they're done
                     if handle_dropin_animation():
-                        pass
+                        game_state = GAME_STATE['END_SCREEN']
+                        anim_state = ANIM_STATE['NONE']
 
         elif game_state == GAME_STATE['END_SCREEN']:
             pass
@@ -299,14 +309,6 @@ def __main__():
 
         if running:
             gui_loop()
-#   game_loop()
-#   draw_endscreen(1)
-#   draw_pushed_button(0)
-#   draw_square_of_pieces(board, (0,2), 3)
-#   game_tick()
-
-        
-
 
 
 
