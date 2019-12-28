@@ -25,7 +25,7 @@ ANIM_STATE = {
         "SCREEN_RESET": 4
 }
 
-END_SCREEN_STATE = {
+GUI_STATE = {
         "RESTART": 0,
         "QUIT": 1
 }
@@ -34,14 +34,14 @@ END_SCREEN_STATE = {
 #because pygame enums are referenced, EVENT_TYPE and INPUT_TYPE are imported
 
 #current state
-game_state = GAME_STATE['PLAYER_MOVE']
+game_state = GAME_STATE['ANIMATION']
 preview_move = 0
-AGAINST_BOT = True
+AGAINST_BOT = False
 BOT_DEPTH = 1
 
-anim_state = ANIM_STATE['NONE']
+anim_state = ANIM_STATE['SCREEN_RESET']
 
-end_screen_state = END_SCREEN_STATE['RESTART']
+gui_state = GUI_STATE['RESTART']
 
 
 board = Board()
@@ -54,14 +54,36 @@ if board.is_comp_turn():
 
 
 #--------------------------------- Game Logic Commands --------------------------------	
+def reset_game():
+    '''Resets the game, including the board and drawing a blank screen'''
+    global game_state, preview_move, anim_state, board
+
+    game_state = GAME_STATE['PLAYER_MOVE']
+    preview_move = 0
+    anim_state = ANIM_STATE['NONE']
+
+    board = Board()
+    #start with player
+    if board.is_comp_turn():
+            board.change_turn()
+
+    draw_blank_game()
+    set_piece_color(board)
+    draw_new_preview(preview_move, board)
+
+    print "game reset"
+
+
+
+
 def reset_turn():
     '''Resets the turn after animation is finished'''
     global game_state, anim_state
     #check for win
     if board.is_winner():
-        global running
         draw_winning_connection(board)
-        running = False
+        game_state = GAME_STATE['END_SCREEN']
+        return
 
     switch_color()
 
@@ -111,7 +133,24 @@ def make_ai_turn():
 
 
 
+
+
 #----------------------------------- End Game Screen -----------------------------------
+def handle_button_action():
+    '''Does action depending on GUI_STATE'''
+    global gui_state, game_state, running
+
+    if gui_state == GUI_STATE['RESTART']:
+        game_state = GAME_STATE['ANIMATION']
+        anim_state = ANIM_STATE['SCREEN_RESET']
+    else:
+        running = False
+
+
+
+def handle_button_press():
+    '''Draws what is necessary with the new button press'''
+    draw_pressed_button(gui_state)
 
 
 
@@ -127,6 +166,8 @@ def game_loop():
     '''The main game_loop'''
     #main game loop
     global preview_move, board, running
+
+    reset_game()
 
     while running:
             #------------------ check events -----------
@@ -177,6 +218,10 @@ def game_loop():
                         if handle_choose_animation():
                             #this sets it up for the falling animation
                             handle_move_logic()
+           
+
+            elif game_state == GAME_STATE['END_SCREEN']:
+                return
 
             game_tick()	
 
@@ -185,18 +230,22 @@ def game_loop():
 
 def gui_loop():
     '''Handles the GUI pop up'''
-    global running, board
+    global running, board, gui_state
 
     #if the player x-ed out of the game
     if not running:
         return
     
+    button_primed = False
+    
     #assumed that coming in, the game just finished
     #still need to draw up GUI
     game_state = GAME_STATE['ANIMATION']
     anim_state = ANIM_STATE['GUI_DROPIN']
-    set_gui_dropin_parameters()
-
+    set_dropin_animation_parameters()
+    
+    #for now, this is here
+    draw_endscreen(gui_state)
 
     while running:
         #------------------ check events -----------
@@ -205,14 +254,26 @@ def gui_loop():
                         running = False
                         break
                 
-                #doesn't listen to input, but still allows for closing the window
-                if event.type == EVENT_TYPE['KEYDOWN']:
+                elif event.type == EVENT_TYPE['KEYDOWN'] and not button_primed:
                         if event.key == INPUT_TYPE['LEFT']:
-                            pass                 
+                            gui_state -= 1
+                            gui_state %= 2
+                            draw_endscreen(gui_state)
+
                         elif event.key == INPUT_TYPE['RIGHT']:
-                            pass
+                            gui_state += 1
+                            gui_state %= 2
+                            draw_endscreen(gui_state)
+
                         elif event.key == INPUT_TYPE['SELECT']:
-                            pass 
+                            handle_button_press()
+                            button_primed = True
+
+                elif event.type == EVENT_TYPE['KEYUP'] and button_primed:
+                        if event.key == INPUT_TYPE['SELECT']:
+                            handle_button_action()
+                            return
+
 
 
         #------------- GAME STATE ---------------
@@ -220,28 +281,33 @@ def gui_loop():
         if game_state == GAME_STATE['ANIMATION']:
                 if anim_state == ANIM_STATE['GUI_DROPIN']:
                     #animations return True when they're done
-                    if handle_gui_dropin_animation():
-                        game_state = GAME_STATE['END_SCREEN']
+                    if handle_dropin_animation():
+                        pass
 
         elif game_state == GAME_STATE['END_SCREEN']:
             pass
+       
+        game_tick()
 
 
 
 
 def __main__():
     '''Puts the game loop together with the actual gui display'''
-#   while running:
-#       game_loop()
+    while running:
+        game_loop()
 
-#       if running:
-#           gui_loop()
-    draw_endscreen(1)
-    game_tick()
+        if running:
+            gui_loop()
+#   game_loop()
+#   draw_endscreen(1)
+#   draw_pushed_button(0)
+#   draw_square_of_pieces(board, (0,2), 3)
+#   game_tick()
+
         
 
 
 
 
 __main__()
-asd = input()

@@ -73,16 +73,20 @@ BUT_RESTART_POS = (29 * SCALE_FACTOR, 49 * SCALE_FACTOR)
 BUT_QUIT_POS = (89 * SCALE_FACTOR , 49 * SCALE_FACTOR)
 
 #load up these bad bois
-RESTART_IN_IMG  = pygame.image.load("img/gui/restart_in.png")
-RESTART_OUT_IMG = pygame.image.load("img/gui/restart_out.png")
-QUIT_IN_IMG     = pygame.image.load("img/gui/quit_in.png")
-QUIT_OUT_IMG    = pygame.image.load("img/gui/quit_out.png")
+RESTART_DESELECT_IMG = pygame.image.load("img/gui/restart_deselected.png")
+RESTART_SELECT_IMG   = pygame.image.load("img/gui/restart_selected.png")
+RESTART_PRESS_IMG    = pygame.image.load("img/gui/restart_pushed.png")
+QUIT_DESELECT_IMG    = pygame.image.load("img/gui/quit_deselected.png")
+QUIT_SELECT_IMG      = pygame.image.load("img/gui/quit_selected.png")
+QUIT_PRESS_IMG       = pygame.image.load("img/gui/quit_pushed.png")
 
 #scale these bad bois up
-RESTART_IN_IMG  = pygame.transform.scale(RESTART_IN_IMG, BUTTON_SIZE)
-RESTART_OUT_IMG = pygame.transform.scale(RESTART_OUT_IMG, BUTTON_SIZE)
-QUIT_IN_IMG     = pygame.transform.scale(QUIT_IN_IMG, BUTTON_SIZE)
-QUIT_OUT_IMG    = pygame.transform.scale(QUIT_OUT_IMG, BUTTON_SIZE)
+RESTART_DESELECT_IMG = pygame.transform.scale(RESTART_DESELECT_IMG, BUTTON_SIZE)
+RESTART_SELECT_IMG   = pygame.transform.scale(RESTART_SELECT_IMG, BUTTON_SIZE)
+RESTART_PRESS_IMG    = pygame.transform.scale(RESTART_PRESS_IMG, BUTTON_SIZE)
+QUIT_DESELECT_IMG    = pygame.transform.scale(QUIT_DESELECT_IMG, BUTTON_SIZE)
+QUIT_SELECT_IMG      = pygame.transform.scale(QUIT_SELECT_IMG, BUTTON_SIZE)
+QUIT_PRESS_IMG       = pygame.transform.scale(QUIT_PRESS_IMG, BUTTON_SIZE)
 
 
 
@@ -90,16 +94,13 @@ QUIT_OUT_IMG    = pygame.transform.scale(QUIT_OUT_IMG, BUTTON_SIZE)
 
 
 #--------------------------- Globals ------------------------------
-#draw BG => then later it just gets overwritten in specific places
-screen.blit(BG_IMG, (0,0))
-screen.blit(BOARD_IMG, (0,0))
-
 FPS = 60
 
 #used by main.py, which does not import pygame
 EVENT_TYPE = {
         "QUIT": pygame.QUIT,
-        "KEYDOWN": pygame.KEYDOWN
+        "KEYDOWN": pygame.KEYDOWN,
+        "KEYUP": pygame.KEYUP
 }
 
 INPUT_TYPE = {
@@ -130,6 +131,12 @@ def get_events():
 
 
 #--------------------------- Basic Drawing Functions ---------------------------------
+def draw_blank_game():
+    '''Will cover the entire screen with a blank game'''
+    screen.blit(BG_IMG, (0,0))
+    screen.blit(BOARD_IMG, (0,0))
+
+
 #all x,y are in pixel space
 def draw_piece_over(pos, img, img_area = (CHIP_SIZE, CHIP_SIZE)):
     '''Draws img at pos without clearing it. Assumes img is CHIP_SIZE x CHIP_SIZE'''
@@ -184,6 +191,17 @@ cur_piece_img = PLAYER_PIECE_IMG
 cur_ghost_img = PLAYER_GHOST_IMG
 
 
+def set_piece_color(board):
+    '''Sets the current color to match that of the board'''
+    global cur_piece_img, cur_ghost_img
+
+    player_turn = not board.is_comp_turn()
+
+    if player_turn and cur_piece_img != PLAYER_PIECE_IMG:
+        switch_color()
+    elif not player_turn and cur_piece_img == PLAYER_PIECE_IMG:
+        switch_color()
+
 
 def switch_color():
         '''Swaps the current image to be the other image'''
@@ -222,28 +240,46 @@ def draw_new_preview(new_preview_move, board, draw_ghost = True):
 
 def draw_winning_connection(board):
     '''Draws the winning connection onto the display'''
-    #first, get the winning connection
     winner = board.get_winning_connection()
+    #discard info about who won
+    winner = winner[1:]
+    win_dir = [winner[0][0] - winner[1][0], winner[0][1] - winner[1][1]]
 
-    #determine direction, then image
-    con_dir = [winner[1][0] - winner[2][0], winner[1][1] - winner[2][1]]
     cross_img = CROSS_NW
-
     #con_dir could be the negative version of a dir, hence the or
-    if con_dir == [0, 1] or con_dir == [0, -1]:
+    if win_dir == [0, 1] or win_dir == [0, -1]:
         cross_img = CROSS_VERT
-    elif con_dir == [1, 0] or con_dir == [-1, 0]:
+    elif win_dir == [1, 0] or win_dir == [-1, 0]:
         cross_img = CROSS_HORIZ
-    elif con_dir == [1, 1] or con_dir == [-1, -1]:
+    elif win_dir == [1, 1] or win_dir == [-1, -1]:
         cross_img = CROSS_NE
-    else:
-        cross_img = CROSS_NW
 
     #actually draw the bad bois
-    winner = winner[1:]
     for cord in winner:
         cur_cord = get_px_cords(cord[0], 5 - cord[1]) 
         draw_piece_over(cur_cord, cross_img) 
+
+
+def draw_square_of_pieces(board, pos, size):
+    '''Draws pieces on the board in a square of size size, but does not touch empty places. DOES NOT CHECK IF VALID / ON BOARD'''
+    cords = []
+
+    for col in range(size):
+        for row in range(size):
+            cords += [[pos[0] + col, pos[1] + row]]
+
+    
+    for cord in cords:
+        piece = board.board_state[5 - cord[1]][cord[0]]
+
+        if piece == 0:
+            continue
+
+        cur_piece = PLAYER_PIECE_IMG
+        if piece == 2:
+            cur_piece = AI_PIECE_IMG
+
+        draw_piece(get_px_cords(cord[0], cord[1]), cur_piece)
 
 
 
@@ -254,13 +290,13 @@ def draw_endscreen(new_selection):
     new_selection %= 2
     
     #making the selected image different 
-    res_img = RESTART_OUT_IMG
-    quit_img = QUIT_OUT_IMG
+    res_img = RESTART_DESELECT_IMG
+    quit_img = QUIT_DESELECT_IMG
 
     if new_selection == 0:
-        res_img = RESTART_IN_IMG
+        res_img = RESTART_SELECT_IMG
     elif new_selection == 1:
-        quit_img = QUIT_IN_IMG
+        quit_img = QUIT_SELECT_IMG
    
 
     #now lets draw these mfs
@@ -268,7 +304,15 @@ def draw_endscreen(new_selection):
     draw_piece_over(BUT_QUIT_POS, quit_img, BUTTON_SIZE)
 
 
+def draw_pressed_button(button): 
+    '''Pushes down a button. 0 = Restart, 1 = Quit''' 
+    butt_img = RESTART_PRESS_IMG
+    img_pos = BUT_RESTART_POS
+    if button == 1:
+        butt_img = QUIT_PRESS_IMG 
+        img_pos = BUT_QUIT_POS
 
+    draw_piece_over(img_pos, butt_img, BUTTON_SIZE)
 
 
 
@@ -300,13 +344,13 @@ dropin_anim = {
 }
 
 
-def set_dropin_animation_parameters(destination):
+def set_dropin_animation_parameters():
     '''Sets all parameters relating to the gui dropin animation'''
     pass
 
 def handle_dropin_animation():
     '''Moves one frame forward in the gui dropin animation'''
-    return False
+    return True
 
 
 
