@@ -1,6 +1,6 @@
 from boardclass import *
 from algorithm import *
-
+import copy
 
 def __main__():
 #   alpha_beta_pruning()
@@ -62,7 +62,7 @@ def guaranteed_wins():
     b.handle_turn(0)
 
     b.handle_turn(0)
-    b.handle_turn(get_best_move(b, 4)) 
+    b.handle_turn(4) 
 
     #now
     #1
@@ -70,14 +70,17 @@ def guaranteed_wins():
     #1
     #1
     #1 _ 2 2 2 _ _ => 1 to move
+    
+    pre_b = copy.deepcopy(b)
 
     b.handle_turn(get_best_move(b, 3))
     b.handle_turn(get_best_move(b, 2))
     b.handle_turn(get_best_move(b, 1))
+
     #should now be a winner
 
     if b.is_winner() == False: 
-        b.print_board()
+        pre_b.print_board()
         print "Failed to win 100% win situation"
     else:
         print "Correctly looked two turns ahead"

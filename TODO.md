@@ -3,7 +3,7 @@
 
 ---
 
-## - [ ] Min Max Algorithim
+## - [X] Min Max Algorithim
 
 - [X] Rework board class to track connections
    This will save a lot of compute time because
@@ -15,9 +15,9 @@
    and put them against each other.   
 - [X] Minmax Implementation
 - [X] Alpha / Beta Pruning
-    - [ ] Alpha / Beta pruning stop when a win is detected!!!
+    - [X] Alpha / Beta pruning stop when a win is detected!!!
 - [X] Integrate to work with GUI
-- [ ] Order optimization
+- [X] Order optimization
    Figure out how to prioritize more interesting moves -
    probably will also be some sort of running total, getting
    updated with each move
@@ -28,14 +28,21 @@
 
 ## - [ ] UI / UX
 
-- [ ] Add way to restart
+~~- [ ] GUI for end\_screen
+~~    - [ ] Display restart / tie text
+    - [X] Also for ties
+~~    - [ ] Maybe have seperate pvp vs pve mode
+~~    - [ ] Settings button during the game
+~~    - [ ] Different difficulties
 - [X] Have seperate modes between AI and user
-- [ ] Connect to Pi to take button inputs
+~~- [ ] Connect to Pi to take button inputs~~
 - [X] Display wins & winner
 - [X] Animate AI choosing placement
 - [X] Falling sound effect
-- [ ] Do something in the case of a tie 
-- [ ] Minor Cleanups
+- [X] Play Sound for victory / loss
+~~- [ ] Minor Cleanups
     - [X] Don't draw preview piece on top row
-    - [ ] Make AI move piece around during thinking time,
+~~    - [ ] Make AI move piece around during thinking time,
        not just during animation at end
+~~    - [ ] Diagnol connections, when drawn, are disconnected.
+       add the little connectors to make them continous

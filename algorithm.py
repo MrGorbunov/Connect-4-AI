@@ -7,7 +7,8 @@ def static_eval(board):
     '''Returns the value of the board, + = 1 and - = 2'''
     #Length 2 = +4
     #Length 3 = +9
-    #Length 4 = +1000
+
+    #Length 4 = 1000, not +
 
     board_eval = 0
 
@@ -22,8 +23,8 @@ def static_eval(board):
             board_eval += multiplier * 4
         elif length == 3:
             board_eval += multiplier * 9
-        elif length == 4:
-            board_eval += multiplier * 1000
+        elif length >= 4:
+            return multiplier * 1000
     
     return board_eval
 
@@ -53,6 +54,10 @@ def get_best_move(board, depth, debug = False):
         if alt_board.handle_turn(i) == False:
             #invalid move
             continue
+        
+        #this is a win for me
+        if alt_board.is_winner():
+            return i
 
         if minimize:
             #minimze the maxima
@@ -98,26 +103,48 @@ def min_outcome(board, depth, cur_max):
 
     #handle first move
     alt_board = copy.deepcopy(board)
-    alt_board.handle_turn(0)
-    min_value = max_outcome(alt_board, depth, None)
+    #3 is center move
+    valid_move = alt_board.handle_turn(3)
+
+    if alt_board.is_winner():
+        return static_eval(alt_board)
+
+    if valid_move: 
+        min_value = max_outcome(alt_board, depth, None)
+    else:
+        #invalid, using parent
+        min_value = static_eval(board)
 
     if min_value <= cur_max:
         return min_value
-    
-    #handle rest of moves
-    for i in range(1, 7):
+
+
+    #move order is center to outside because usually interesting moves are centered
+    for move in (2,4,1,5,0,6):
         alt_board = copy.deepcopy(board)
-        alt_board.handle_turn(i)
-        value = max_outcome(alt_board, depth, min_value)
+        valid_move = alt_board.handle_turn(move)
+
+        if alt_board.is_winner():
+            return static_eval(alt_board)
+    
+
+        if valid_move:
+            value = max_outcome(alt_board, depth, min_value)
+        else:
+            #invalid move
+            value = static_eval(board)
 
         #pruning
         if value <= cur_max:
             return value
 
+    
         if value < min_value:
             min_value = value
     
     return min_value
+
+
 
 
 def max_outcome(board, depth, cur_min):
@@ -128,17 +155,37 @@ def max_outcome(board, depth, cur_min):
 
     #handle first move
     alt_board = copy.deepcopy(board)
-    alt_board.handle_turn(0)
-    max_value = min_outcome(alt_board, depth, None)
-    
+    #3 is center piece
+    valid_move = alt_board.handle_turn(3)
+
+    if alt_board.is_winner():
+        return static_eval(alt_board)
+   
+    if valid_move:
+        max_value = min_outcome(alt_board, depth, None)
+    else:
+        #invalid move
+        max_value = static_eval(board)
+   
+    #pruning
     if max_value >= cur_min and cur_min != None:
         return max_value
 
-    #handle rest
-    for i in range(1, 7):
+
+    #interesting moves come from center outwards
+    for move in (4,2,5,1,6,0):
         alt_board = copy.deepcopy(board)
-        alt_board.handle_turn(i)
-        value = min_outcome(alt_board, depth, max_value)
+        
+        valid_move = alt_board.handle_turn(move)
+
+        if alt_board.is_winner():
+            return static_eval(alt_board)
+
+        if valid_move:
+            value = min_outcome(alt_board, depth, max_value)
+        else:
+            #invalid, use parent board
+            value = static_eval(board)
 
         #pruning
         if value >= cur_min and cur_min != None:
@@ -146,6 +193,7 @@ def max_outcome(board, depth, cur_min):
 
         if value > max_value:
             max_value = value
+
 
     return max_value
 

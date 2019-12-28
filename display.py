@@ -16,43 +16,30 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 clock = pygame.time.Clock()
 
 
-#used by main.py, which does not import pygame
-EVENT_TYPE = {
-        "QUIT": pygame.QUIT,
-        "KEYDOWN": pygame.KEYDOWN
-}
-
-INPUT_TYPE = {
-	"LEFT": pygame.K_LEFT,
-	"RIGHT": pygame.K_RIGHT,
-	"SELECT": pygame.K_DOWN
-}
-
-
-
 
 
 #------------------------------ SFX / MUSIC ----------------------
 #currently no music
 hit_sound = mixer.Sound("snd/hit.wav")
 quiet_hit_sound = mixer.Sound("snd/hit_quiet.wav")
+victory_sound = mixer.Sound("snd/victory.wav")
+game_over_sound = mixer.Sound("snd/game_over.wav")
 
 
 
 
-
-#--------------------------------- IMAGES -------------------------
-#loading all images
-BG_IMG    = pygame.image.load("img/wall.png")
-BOARD_IMG = pygame.image.load("img/gameboard.png")
-
-
+#----------------------------- GAME IMAGES --------------------------------
 #these come from the image, representing the x,y of the top left of the gameboard
 BOARD_X = 22 * SCALE_FACTOR
 BOARD_Y = 21 * SCALE_FACTOR
 CHIP_SIZE = 16 * SCALE_FACTOR
 #distance (px) between the top of the board and the preview piece
 PREVIEW_PADDING = -3 * SCALE_FACTOR
+
+
+#load images
+BG_IMG    = pygame.image.load("img/wall.png")
+BOARD_IMG = pygame.image.load("img/gameboard.png")
 
 PLAYER_GHOST_IMG = pygame.image.load("img/piece/ghost_red_piece.png")
 PLAYER_PIECE_IMG = pygame.image.load("img/piece/red_piece.png")
@@ -73,27 +60,61 @@ PLAYER_GHOST_IMG = pygame.transform.scale(PLAYER_GHOST_IMG, (CHIP_SIZE, CHIP_SIZ
 AI_PIECE_IMG     = pygame.transform.scale(AI_PIECE_IMG,  (CHIP_SIZE, CHIP_SIZE))
 AI_GHOST_IMG     = pygame.transform.scale(AI_GHOST_IMG, (CHIP_SIZE, CHIP_SIZE))
 
-#cross images
 CROSS_HORIZ = pygame.transform.scale(CROSS_HORIZ, (CHIP_SIZE, CHIP_SIZE))
 CROSS_VERT  = pygame.transform.scale(CROSS_VERT, (CHIP_SIZE, CHIP_SIZE))
 CROSS_NW    = pygame.transform.scale(CROSS_NW, (CHIP_SIZE, CHIP_SIZE))
 CROSS_NE    = pygame.transform.scale(CROSS_NE, (CHIP_SIZE, CHIP_SIZE))
 
 
-#draw BG => then later it just gets overwritten in specific places
-screen.blit(BG_IMG, (0,0))
-screen.blit(BOARD_IMG, (0,0))
+
+
+#--------------------------- GUI Images -----------------------
+#These magic numbers come right from the files
+BUTTON_SIZE = (36 * SCALE_FACTOR, 34 * SCALE_FACTOR)
+BUT_RESTART_POS = (29 * SCALE_FACTOR, 49 * SCALE_FACTOR)
+BUT_QUIT_POS = (89 * SCALE_FACTOR , 49 * SCALE_FACTOR)
+
+#load up these bad bois
+RESTART_DESELECT_IMG = pygame.image.load("img/gui/restart_deselected.png")
+RESTART_SELECT_IMG   = pygame.image.load("img/gui/restart_selected.png")
+RESTART_PRESS_IMG    = pygame.image.load("img/gui/restart_pushed.png")
+QUIT_DESELECT_IMG    = pygame.image.load("img/gui/quit_deselected.png")
+QUIT_SELECT_IMG      = pygame.image.load("img/gui/quit_selected.png")
+QUIT_PRESS_IMG       = pygame.image.load("img/gui/quit_pushed.png")
+
+#scale these bad bois up
+RESTART_DESELECT_IMG = pygame.transform.scale(RESTART_DESELECT_IMG, BUTTON_SIZE)
+RESTART_SELECT_IMG   = pygame.transform.scale(RESTART_SELECT_IMG, BUTTON_SIZE)
+RESTART_PRESS_IMG    = pygame.transform.scale(RESTART_PRESS_IMG, BUTTON_SIZE)
+QUIT_DESELECT_IMG    = pygame.transform.scale(QUIT_DESELECT_IMG, BUTTON_SIZE)
+QUIT_SELECT_IMG      = pygame.transform.scale(QUIT_SELECT_IMG, BUTTON_SIZE)
+QUIT_PRESS_IMG       = pygame.transform.scale(QUIT_PRESS_IMG, BUTTON_SIZE)
 
 
 
 
 
-#which row the current move is planned to be in
+
+#--------------------------- Globals ------------------------------
 FPS = 60
-preview_move = 0
 
-cur_piece_img = PLAYER_PIECE_IMG
-cur_ghost_img = PLAYER_GHOST_IMG
+#used by main.py, which does not import pygame
+EVENT_TYPE = {
+        "QUIT": pygame.QUIT,
+        "KEYDOWN": pygame.KEYDOWN,
+        "KEYUP": pygame.KEYUP
+}
+
+INPUT_TYPE = {
+	"LEFT": pygame.K_LEFT,
+	"RIGHT": pygame.K_RIGHT,
+	"SELECT": pygame.K_DOWN
+}
+
+
+
+
+
 
 
 
@@ -111,13 +132,30 @@ def get_events():
 
 
 
+#------------------------ Basic Audio Hits
+def play_victory_sound():
+    '''Literally just plays the victory sound effect'''
+    victory_sound.play()
+
+def play_gameover_sound():
+    '''Plays the game over sound'''
+    game_over_sound.play()
+
+
+
 #--------------------------- Basic Drawing Functions ---------------------------------
+def draw_blank_game():
+    '''Will cover the entire screen with a blank game'''
+    screen.blit(BG_IMG, (0,0))
+    screen.blit(BOARD_IMG, (0,0))
+
+
 #all x,y are in pixel space
-def draw_piece_over(pos, img):
+def draw_piece_over(pos, img, img_area = (CHIP_SIZE, CHIP_SIZE)):
     '''Draws img at pos without clearing it. Assumes img is CHIP_SIZE x CHIP_SIZE'''
     global screen
 
-    board_area = pos + (CHIP_SIZE, CHIP_SIZE)
+    board_area = pos + img_area
     screen.blit(img, pos)
 
 
@@ -134,10 +172,10 @@ def draw_piece(pos, chip):
 	screen.blit(BOARD_IMG, pos, board_area)
 
 
-def clear_piece(pos):
+def clear_piece(pos, area = (CHIP_SIZE, CHIP_SIZE)):
 	'''Clears a piece on the board, but only visually. pos is a (px_x, px_y)'''
 	global screen
-	board_area = pos + (CHIP_SIZE, CHIP_SIZE)
+	board_area = pos + area
 	
 	screen.blit(BG_IMG, pos, board_area)
 	screen.blit(BOARD_IMG, pos, board_area)
@@ -152,8 +190,31 @@ def get_px_cords(x, y, y_px_offset = 0):
 
 def get_board_cords(px_x, px_y):
 	'''Converts pixel cords to game board cords. Will return negatives'''
+        #// 1 is a floor operator (integer division)
 	return ((px_x - BOARD_X) / CHIP_SIZE // 1, 
 			(px_y - BOARD_Y) / CHIP_SIZE // 1)
+
+
+
+
+#-------------------- Game-Related Drawing Commands -----------------------
+preview_move = 0
+
+cur_piece_img = PLAYER_PIECE_IMG
+cur_ghost_img = PLAYER_GHOST_IMG
+
+
+def set_piece_color(board):
+    '''Sets the current color to match that of the board'''
+    global cur_piece_img, cur_ghost_img
+
+    player_turn = not board.is_comp_turn()
+
+    if player_turn and cur_piece_img != PLAYER_PIECE_IMG:
+        switch_color()
+    elif not player_turn and cur_piece_img == PLAYER_PIECE_IMG:
+        switch_color()
+
 
 def switch_color():
         '''Swaps the current image to be the other image'''
@@ -166,9 +227,6 @@ def switch_color():
             cur_ghost_img = PLAYER_GHOST_IMG
 
 
-
-
-#----------------------------- Coupled Drawing Commands ----------------------------------
 def draw_new_preview(new_preview_move, board, draw_ghost = True):
 	'''Will update visuals to match the new state. new_preview_move is automatically clamped (%= 7)'''
 	global PREVIEW_PADDING, preview_move
@@ -195,28 +253,192 @@ def draw_new_preview(new_preview_move, board, draw_ghost = True):
 
 def draw_winning_connection(board):
     '''Draws the winning connection onto the display'''
-    #first, get the winning connection
+    if not board.is_winner():
+        return
+
     winner = board.get_winning_connection()
+    #discard info about who won
+    winner = winner[1:]
+    win_dir = [winner[0][0] - winner[1][0], winner[0][1] - winner[1][1]]
 
-    #determine direction, then image
-    con_dir = [winner[1][0] - winner[2][0], winner[1][1] - winner[2][1]]
     cross_img = CROSS_NW
-
     #con_dir could be the negative version of a dir, hence the or
-    if con_dir == [0, 1] or con_dir == [0, -1]:
+    if win_dir == [0, 1] or win_dir == [0, -1]:
         cross_img = CROSS_VERT
-    elif con_dir == [1, 0] or con_dir == [-1, 0]:
+    elif win_dir == [1, 0] or win_dir == [-1, 0]:
         cross_img = CROSS_HORIZ
-    elif con_dir == [1, 1] or con_dir == [-1, -1]:
+    elif win_dir == [1, 1] or win_dir == [-1, -1]:
         cross_img = CROSS_NE
-    else:
-        cross_img = CROSS_NW
 
     #actually draw the bad bois
-    winner = winner[1:]
     for cord in winner:
         cur_cord = get_px_cords(cord[0], 5 - cord[1]) 
         draw_piece_over(cur_cord, cross_img) 
+
+
+def draw_square_of_pieces(board, pos, width, height):
+    '''Draws pieces on the board in a square of size size, touching empty places too. pos is in board space.'''
+    cords = []
+
+    for col in range(width):
+        x = pos[0] + col
+        for row in range(height):
+            y = pos[1] + row
+
+            cords += [[x, y]]
+
+    #now actually draw those bad bois
+    for cord in cords:
+        piece = 0
+
+        if cord[0] < 0 or cord[0] >= len(board.board_state[0]):
+            piece = 3
+        elif cord[1] < 0 or cord[1] >= len(board.board_state):
+            piece = 3
+        else:
+            piece = board.board_state[5 - cord[1]][cord[0]]
+
+        if piece == 0 or piece == 3:
+            clear_piece(get_px_cords(cord[0], cord[1]))
+            continue
+
+        cur_piece = PLAYER_PIECE_IMG
+        if piece == 1:
+            cur_piece = AI_PIECE_IMG
+
+        draw_piece(get_px_cords(cord[0], cord[1]), cur_piece)
+
+
+
+
+#------------------------- GUI Drawing Commands --------------------------
+def draw_endscreen(new_selection, y_pos = BUT_RESTART_POS[1]):
+    '''Draws/updates the endscreen gui to match the new selection'''
+    new_selection %= 2
+    
+    #making the selected image different 
+    res_img = RESTART_DESELECT_IMG
+    quit_img = QUIT_DESELECT_IMG
+
+    if new_selection == 0:
+        res_img = RESTART_SELECT_IMG
+    elif new_selection == 1:
+        quit_img = QUIT_SELECT_IMG
+   
+
+    #now lets draw these mfs
+    res_pos = (BUT_RESTART_POS[0], y_pos)
+    quit_pos = (BUT_QUIT_POS[0], y_pos)
+    draw_piece_over(res_pos, res_img, BUTTON_SIZE)
+    draw_piece_over(quit_pos, quit_img, BUTTON_SIZE)
+
+
+def draw_pressed_button(button): 
+    '''Pushes down a button. 0 = Restart, 1 = Quit''' 
+    butt_img = RESTART_PRESS_IMG
+    img_pos = BUT_RESTART_POS
+    if button == 1:
+        butt_img = QUIT_PRESS_IMG 
+        img_pos = BUT_QUIT_POS
+
+    draw_piece_over(img_pos, butt_img, BUTTON_SIZE)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#-------------------------------------------------------------------------
+#                                Animations
+#-------------------------------------------------------------------------
+
+#--------------------------------- GUI Drop-In Animation ----------------------------
+#exactly the same as the falling animation, just diff num bounces, image, and the board behind needs to be redrawn a lot
+#gravity is a lil bigger because there's usually more lag with this
+DROP_GRAVITY = 22 * SCALE_FACTOR
+DROP_NUM_BOUNCES = 3
+DROP_BOUNCE_COEF = -0.4
+dropin_anim = {
+	"y_pos": 0,
+	"y_dest": BUT_RESTART_POS[1],
+	"y_vel": -35 * SCALE_FACTOR,
+	"Y_ACCEL": DROP_GRAVITY * (1.0 / FPS),
+	"bounce": 0,
+        "board": None
+}
+
+
+
+def set_dropin_animation_parameters(board):
+        '''Sets up the animation for GUI pieces to drop in'''
+	global dropin_anim
+        
+        #always start the same
+	dropin_anim['y_pos'] = -BUTTON_SIZE[1] - 10
+        dropin_anim['y_dest'] = BUT_RESTART_POS[1]
+        #the negative adds some delay before it shows itself
+	dropin_anim['y_vel'] = -5 * SCALE_FACTOR
+        dropin_anim['bounce'] = 0
+        dropin_anim['board'] = board
+
+
+def handle_dropin_animation():
+	'''Will draw and update values relating to a falling piece'''
+	global dropin_anim
+        finished = False
+	
+        dropin_anim['y_vel'] += dropin_anim['Y_ACCEL']
+	dropin_anim['y_pos'] += int(dropin_anim['y_vel'])
+	
+	#check if it has reached the target y yet
+	if dropin_anim['y_dest'] <= dropin_anim['y_pos']:
+		#this way it isn't below the line
+		dropin_anim['y_pos'] = dropin_anim['y_dest']
+
+                #sound playing
+                if dropin_anim['bounce'] == 0:
+                    hit_sound.play()
+                else:
+                    quiet_hit_sound.play()
+
+		#bouncing behaviour
+		if dropin_anim['bounce'] + 1 >= DROP_NUM_BOUNCES:
+			finish_dropin_animation()
+                        finished = True
+		
+
+                dropin_anim['bounce'] += 1
+                #reverse dir and lose some speed
+                dropin_anim['y_vel'] *= DROP_BOUNCE_COEF
+
+
+        #redraw the pieces and the winning connection, then the GUI
+        res_pos = get_board_cords(BUT_RESTART_POS[0], dropin_anim['y_pos'])
+        quit_pos = get_board_cords(BUT_QUIT_POS[0], dropin_anim['y_pos'])
+
+        res_pos = (res_pos[0], res_pos[1] - 1)
+        quit_pos = (quit_pos[0], quit_pos[1] - 1)
+
+        draw_square_of_pieces(dropin_anim['board'], res_pos, 3, 4)
+        draw_square_of_pieces(dropin_anim['board'], quit_pos, 3, 4)
+        draw_winning_connection(dropin_anim['board'])
+
+        draw_endscreen(0, dropin_anim['y_pos'])
+        return finished
+		
+
+
+def finish_dropin_animation():
+	'''Wraps up the falling animation, redrawing what's necessary'''
+        pass
 
 
 
@@ -273,6 +495,7 @@ def handle_choose_animation():
 def finish_choose_animation():
     '''Resets choose_anim parameters for next time'''
     #all params (A/O now) are set with set_choose_animation()
+    #so none need to be reset
     pass
 
 
@@ -305,11 +528,14 @@ def set_falling_animation_parameters(board):
 	#set to just be the bottom of the board
 	fall_anim['dest'] = get_px_cords(preview_move, board.empty_slots_in_col(preview_move) - 1)
 
+        fall_anim['bounce'] = 0
+
 
 
 def handle_falling_animation():
 	'''Will draw and update values relating to a falling piece'''
 	global fall_anim
+        finished = False
 	
 	clear_piece(tuple(fall_anim['pos']))
 	fall_anim['pos'] = list(fall_anim['pos'])
@@ -331,12 +557,7 @@ def handle_falling_animation():
 		#bouncing behaviour
 		if fall_anim['bounce'] + 1 >= NUM_BOUNCES:
 			finish_falling_animation()
-
-                        #redraw
-                        fall_anim['pos'] = tuple(fall_anim['pos'])
-                        draw_piece(fall_anim['pos'], fall_anim['img'])
-
-                        return True 
+                        finished = True
 		
 
                 fall_anim['bounce'] += 1
@@ -348,7 +569,7 @@ def handle_falling_animation():
         fall_anim['pos'] = tuple(fall_anim['pos'])
         draw_piece(fall_anim['pos'], fall_anim['img'])
 
-        return False
+        return finished
 		
 
 

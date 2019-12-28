@@ -26,10 +26,10 @@ class Board():
     def __init__(self):
         self.board_state = []
 
-        for i in range(6):
+        for row in range(6):
             self.board_state += [[]]
-            for j in range(7):
-                self.board_state[i] += [PIECE['AIR']]
+            for col in range(7):
+                self.board_state[row] += [PIECE['AIR']]
 
         self.turn = 0
        
@@ -60,7 +60,7 @@ class Board():
 
         return False
 
-
+    
 
     def empty_slots_in_col(self, col_ind):
         '''Returns the number of empty slots in column col_ind. Must be 0-6 (inclusive)'''
@@ -226,6 +226,18 @@ class Board():
                 return True
 
         return False
+
+
+    def is_tie(self):
+        '''Checks if currently a tie, returns True if it is a tie'''
+        all_filled = True
+
+        for col in self.board_state:
+            for p in col:
+                if p == PIECE['AIR']:
+                    all_filled = False
+
+        return all_filled and not self.is_winner() 
 
 
     def get_winning_connection(self):
