@@ -64,7 +64,8 @@ class Board():
 
     def empty_slots_in_col(self, col_ind):
         '''Returns the number of empty slots in column col_ind. Must be 0-6 (inclusive)'''
-        empty_slots = GAME_STATE.COLUMN
+        #number of empty_slots in an empty column
+        empty_slots = 6
 
         for row in self.board_state:
             if row[col_ind] != PIECE['AIR']:

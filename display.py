@@ -5,7 +5,7 @@ mixer.pre_init(44100, -16, 1, 512)
 pygame.init()
 
 #window info
-SCALE_FACTOR = 6
+SCALE_FACTOR = 9
 SCREEN_WIDTH = 160 * SCALE_FACTOR // 1 #//1 = floor function
 SCREEN_HEIGHT = 120 * SCALE_FACTOR // 1
 pygame.display.set_caption("Connect 4 AI")
