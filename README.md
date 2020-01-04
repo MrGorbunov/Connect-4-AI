@@ -1,14 +1,14 @@
 # Connect-4-AI
-An AI that can run on a Raspberry Pi and take button inputs to play a game of connect 4 with you.
+An AI that can play a game of connect 4 with you.
 
-This project is in python
+This project is in python 2 (written in 2.7.17), _will not work with python3_
 The GUI is written with pygame
 Images made with Gimp (only the .pngs are in this repo)
+Sounds downloaded from freesounds.com
 
 The AI functions via a min-max algorithm. The only inputs for the player are left, right, and select.
 
-This is currently in development, so there are still a lot of missing things (AI, Pi integration, etc)
-
+There were initially plans to make this run on a Pi, but that was dropped.
 
 
 ## Legal
