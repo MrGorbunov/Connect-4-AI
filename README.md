@@ -1,6 +1,8 @@
 # Connect-4-AI
 An AI that can play a game of connect 4 with you.
 
+**You can access a more complete write up [here](https://docs.google.com/document/d/1byumCFPez2yFttPGNKPpc7ZG8cQDxOOcB6mCObb4oN8/edit?usp=sharing)**
+
 This project is in python 2 (written in 2.7.17), _will not work with python3_
 The GUI is written with pygame
 Images made with Gimp (only the .pngs are in this repo)
